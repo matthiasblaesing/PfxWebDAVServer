@@ -16,25 +16,22 @@
 package nl.ellipsis.webdav.server.methods;
 
 import java.io.IOException;
-import java.util.HashMap;
 import java.util.Hashtable;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.ParserConfigurationException;
 
-import org.springframework.http.HttpStatus;
 import org.w3c.dom.DOMException;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
-import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
 import nl.ellipsis.webdav.HttpHeaders;
+import nl.ellipsis.webdav.HttpStatus;
 import nl.ellipsis.webdav.server.ITransaction;
 import nl.ellipsis.webdav.server.IWebDAVStore;
 import nl.ellipsis.webdav.server.StoredObject;
@@ -99,7 +96,7 @@ public class DoLock extends AbstractMethod {
 			// Mac OS Finder (whether 10.4.x or 10.5) can't store files
 			// because executing a LOCK without lock information causes a
 			// SC_BAD_REQUEST
-			_userAgent = req.getHeader(javax.ws.rs.core.HttpHeaders.USER_AGENT);
+			_userAgent = req.getHeader(HttpHeaders.USER_AGENT);
 			if (_userAgent != null && _userAgent.indexOf("Darwin") != -1) {
 				_macLockRequest = true;
 

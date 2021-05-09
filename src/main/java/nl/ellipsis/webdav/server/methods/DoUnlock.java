@@ -21,8 +21,7 @@ import java.io.IOException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import org.springframework.http.HttpStatus;
-
+import nl.ellipsis.webdav.HttpStatus;
 import nl.ellipsis.webdav.server.ITransaction;
 import nl.ellipsis.webdav.server.IWebDAVStore;
 import nl.ellipsis.webdav.server.StoredObject;
@@ -90,7 +89,7 @@ public class DoUnlock extends DeterminableMethod {
 							resp.setStatus(HttpServletResponse.SC_NO_CONTENT);
 						} else {
 							LOG.debug("DoUnlock failure at " + lo.getPath());
-							resp.sendError(HttpStatus.METHOD_FAILURE.value()); 
+							resp.sendError(HttpStatus.INTERNAL_SERVER_ERROR.value());
 						}
 					} else {
 						resp.sendError(HttpServletResponse.SC_BAD_REQUEST);

@@ -20,12 +20,12 @@ import java.io.IOException;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import nl.ellipsis.webdav.HttpHeaders;
 
 import nl.ellipsis.webdav.server.IMimeTyper;
 import nl.ellipsis.webdav.server.ITransaction;
 import nl.ellipsis.webdav.server.IWebDAVStore;
 import nl.ellipsis.webdav.server.StoredObject;
-import nl.ellipsis.webdav.server.WebDAVConstants;
 import nl.ellipsis.webdav.server.exceptions.AccessDeniedException;
 import nl.ellipsis.webdav.server.exceptions.LockFailedException;
 import nl.ellipsis.webdav.server.exceptions.ObjectAlreadyExistsException;
@@ -87,7 +87,7 @@ public class DoHead extends AbstractMethod {
 				}
 			} else if (so.isNullResource()) {
 				String methodsAllowed = DeterminableMethod.determineMethodsAllowed(so);
-				resp.addHeader(javax.ws.rs.core.HttpHeaders.ALLOW, methodsAllowed);
+				resp.addHeader(HttpHeaders.ALLOW, methodsAllowed);
 				resp.sendError(HttpServletResponse.SC_METHOD_NOT_ALLOWED);
 				return;
 			}
@@ -97,7 +97,7 @@ public class DoHead extends AbstractMethod {
 			if (_resourceLocks.lock(transaction, path, tempLockOwner, false, 0, AbstractMethod.getTempTimeout(), TEMPORARY)) {
 				try {
 
-					String eTagMatch = req.getHeader(javax.ws.rs.core.HttpHeaders.IF_NONE_MATCH);
+					String eTagMatch = req.getHeader(HttpHeaders.IF_NONE_MATCH);
 					if (eTagMatch != null) {
 						if (eTagMatch.equals(getETag(so))) {
 							resp.setStatus(HttpServletResponse.SC_NOT_MODIFIED);
@@ -116,7 +116,7 @@ public class DoHead extends AbstractMethod {
 							resp.setDateHeader("last-modified", lastModified);
 
 							String eTag = getETag(so);
-							resp.addHeader(javax.ws.rs.core.HttpHeaders.ETAG, eTag);
+							resp.addHeader(HttpHeaders.ETAG, eTag);
 
 							long resourceLength = so.getResourceLength();
 
@@ -125,7 +125,7 @@ public class DoHead extends AbstractMethod {
 									if (resourceLength <= Integer.MAX_VALUE) {
 										resp.setContentLength((int) resourceLength);
 									} else {
-										resp.setHeader(javax.ws.rs.core.HttpHeaders.CONTENT_LENGTH, Long.toString(resourceLength));
+										resp.setHeader(HttpHeaders.CONTENT_LENGTH, Long.toString(resourceLength));
 										// is "content-length" the right header?
 										// is long a valid format?
 									}

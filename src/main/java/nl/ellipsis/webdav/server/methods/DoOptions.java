@@ -57,7 +57,7 @@ public class DoOptions extends DeterminableMethod {
 
 				so = _store.getStoredObject(transaction, path);
 				String methodsAllowed = determineMethodsAllowed(so);
-				resp.addHeader(javax.ws.rs.core.HttpHeaders.ALLOW, methodsAllowed);
+				resp.addHeader(HttpHeaders.ALLOW, methodsAllowed);
 				resp.addHeader(HttpHeaders.MS_AUTHOR_VIA, "DAV");
 			} catch (AccessDeniedException e) {
 				resp.sendError(HttpServletResponse.SC_FORBIDDEN);

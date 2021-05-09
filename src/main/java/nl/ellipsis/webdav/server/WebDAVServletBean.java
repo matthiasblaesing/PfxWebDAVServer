@@ -29,8 +29,6 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import org.springframework.http.HttpStatus;
-
 import nl.ellipsis.webdav.server.exceptions.UnauthenticatedException;
 import nl.ellipsis.webdav.server.exceptions.WebDAVException;
 import nl.ellipsis.webdav.server.locking.ResourceLocks;

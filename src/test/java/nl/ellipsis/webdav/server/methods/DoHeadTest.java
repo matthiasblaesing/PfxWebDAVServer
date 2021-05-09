@@ -2,6 +2,7 @@ package nl.ellipsis.webdav.server.methods;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import nl.ellipsis.webdav.HttpHeaders;
 
 import nl.ellipsis.webdav.server.IMimeTyper;
 import nl.ellipsis.webdav.server.ITransaction;
@@ -9,8 +10,6 @@ import nl.ellipsis.webdav.server.IWebDAVStore;
 import nl.ellipsis.webdav.server.StoredObject;
 import nl.ellipsis.webdav.server.WebDAVConstants;
 import nl.ellipsis.webdav.server.locking.ResourceLocks;
-import nl.ellipsis.webdav.server.methods.AbstractMethod;
-import nl.ellipsis.webdav.server.methods.DoHead;
 import nl.ellipsis.webdav.server.testutil.MockTest;
 import nl.ellipsis.webdav.server.testutil.TestingOutputStream;
 
@@ -80,7 +79,7 @@ public class DoHeadTest extends MockTest {
 				oneOf(mockStore).getStoredObject(mockTransaction, "/index.html");
 				will(returnValue(indexSo));
 
-				oneOf(mockReq).getHeader(javax.ws.rs.core.HttpHeaders.IF_NONE_MATCH);
+				oneOf(mockReq).getHeader(HttpHeaders.IF_NONE_MATCH);
 				will(returnValue(null));
 
 				oneOf(mockRes).setDateHeader("last-modified", indexSo.getLastModified().getTime());

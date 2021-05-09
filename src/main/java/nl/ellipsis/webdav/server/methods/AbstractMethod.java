@@ -16,13 +16,16 @@
 
 package nl.ellipsis.webdav.server.methods;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.Writer;
+import java.nio.charset.StandardCharsets;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Enumeration;
-import java.util.HashMap;
 import java.util.Hashtable;
 import java.util.Locale;
 import java.util.TimeZone;
@@ -33,14 +36,12 @@ import javax.servlet.http.HttpServletResponse;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.ParserConfigurationException;
 
-import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.springframework.http.HttpStatus;
 import org.w3c.dom.Document;
-import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
 import nl.ellipsis.webdav.HttpHeaders;
+import nl.ellipsis.webdav.HttpStatus;
 import nl.ellipsis.webdav.server.IMethodExecutor;
 import nl.ellipsis.webdav.server.ITransaction;
 import nl.ellipsis.webdav.server.StoredObject;
@@ -209,14 +210,24 @@ public abstract class AbstractMethod implements IMethodExecutor {
 	 */
 	protected synchronized static Document getDocument(HttpServletRequest request) throws ServletException, SAXException, IOException, ParserConfigurationException {
 		DocumentBuilder documentBuilder = XMLHelper.getDocumentBuilder();
+
+                ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                InputStream is = request.getInputStream();
+                byte[] buffer = new byte[10124];
+                int read = 0;
+                while((read = is.read(buffer)) >= 0) {
+                    baos.write(buffer, 0, read);
+                }
+
 		// Note - DocumentBuilders are not thread safe, so I've synchronized this method (there are probably better solutions)
-		String xml = IOUtils.toString(request.getInputStream(),java.nio.charset.StandardCharsets.UTF_8.name());
-		LOG.debug(xml);
+                if(LOG.isDebugEnabled()) {
+                    LOG.debug(baos.toString(StandardCharsets.UTF_8));
+                }
 
 		try {
-			return documentBuilder.parse(IOUtils.toInputStream(xml,java.nio.charset.StandardCharsets.UTF_8.name()));
+			return documentBuilder.parse(new ByteArrayInputStream(baos.toByteArray()));
 		} catch (SAXException e) {
-			LOG.error("Failed to parse XML in request - " + xml, e);
+			LOG.error("Failed to parse XML in request - " + baos.toString(StandardCharsets.UTF_8), e);
 			throw e;
 		}
 	}

@@ -14,9 +14,6 @@ import nl.ellipsis.webdav.server.WebDAVConstants;
 import nl.ellipsis.webdav.server.locking.IResourceLocks;
 import nl.ellipsis.webdav.server.locking.LockedObject;
 import nl.ellipsis.webdav.server.locking.ResourceLocks;
-import nl.ellipsis.webdav.server.methods.AbstractMethod;
-import nl.ellipsis.webdav.server.methods.DoLock;
-import nl.ellipsis.webdav.server.methods.DoMkcol;
 import nl.ellipsis.webdav.server.testutil.MockTest;
 
 import org.jmock.Expectations;
@@ -266,7 +263,7 @@ public class DoMkcolTest extends MockTest {
 				oneOf(mockResourceLocks).getLockedObjectByPath(mockTransaction, parentPath);
 				will(returnValue(parentLo));
 
-				oneOf(mockReq).getHeader(javax.ws.rs.core.HttpHeaders.USER_AGENT);
+				oneOf(mockReq).getHeader(HttpHeaders.USER_AGENT);
 				will(returnValue("Goliath"));
 
 				oneOf(mockResourceLocks).lock(with(any(ITransaction.class)), with(any(String.class)),

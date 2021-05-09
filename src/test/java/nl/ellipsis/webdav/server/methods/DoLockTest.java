@@ -14,8 +14,6 @@ import nl.ellipsis.webdav.server.WebDAVConstants;
 import nl.ellipsis.webdav.server.locking.IResourceLocks;
 import nl.ellipsis.webdav.server.locking.LockedObject;
 import nl.ellipsis.webdav.server.locking.ResourceLocks;
-import nl.ellipsis.webdav.server.methods.AbstractMethod;
-import nl.ellipsis.webdav.server.methods.DoLock;
 import nl.ellipsis.webdav.server.testutil.MockTest;
 
 import org.jmock.Expectations;
@@ -96,7 +94,7 @@ public class DoLockTest extends MockTest {
 				oneOf(mockReq).getHeader(HttpHeaders.IF);
 				will(returnValue(lockToken));
 
-				oneOf(mockReq).getHeader(javax.ws.rs.core.HttpHeaders.USER_AGENT);
+				oneOf(mockReq).getHeader(HttpHeaders.USER_AGENT);
 				will(returnValue("Goliath"));
 
 				exactly(2).of(mockReq).getHeader(HttpHeaders.IF);
@@ -142,7 +140,7 @@ public class DoLockTest extends MockTest {
 				oneOf(mockReq).getPathInfo();
 				will(returnValue(lockPath));
 
-				oneOf(mockReq).getHeader(javax.ws.rs.core.HttpHeaders.USER_AGENT);
+				oneOf(mockReq).getHeader(HttpHeaders.USER_AGENT);
 				will(returnValue("Goliath"));
 
 				oneOf(mockReq).getHeader(HttpHeaders.IF);
@@ -199,7 +197,7 @@ public class DoLockTest extends MockTest {
 				oneOf(mockReq).getPathInfo();
 				will(returnValue(lockPath));
 
-				oneOf(mockReq).getHeader(javax.ws.rs.core.HttpHeaders.USER_AGENT);
+				oneOf(mockReq).getHeader(HttpHeaders.USER_AGENT);
 				will(returnValue("Goliath"));
 
 				oneOf(mockReq).getHeader(HttpHeaders.IF);
@@ -257,7 +255,7 @@ public class DoLockTest extends MockTest {
 				oneOf(mockReq).getPathInfo();
 				will(returnValue(lockPath));
 
-				oneOf(mockReq).getHeader(javax.ws.rs.core.HttpHeaders.USER_AGENT);
+				oneOf(mockReq).getHeader(HttpHeaders.USER_AGENT);
 				will(returnValue("Goliath"));
 
 				oneOf(mockReq).getHeader(HttpHeaders.IF);
@@ -314,7 +312,7 @@ public class DoLockTest extends MockTest {
 				oneOf(mockReq).getPathInfo();
 				will(returnValue(lockPath));
 
-				oneOf(mockReq).getHeader(javax.ws.rs.core.HttpHeaders.USER_AGENT);
+				oneOf(mockReq).getHeader(HttpHeaders.USER_AGENT);
 				will(returnValue("Goliath"));
 
 				oneOf(mockReq).getHeader(HttpHeaders.IF);
@@ -381,7 +379,7 @@ public class DoLockTest extends MockTest {
 				oneOf(mockResourceLocks).getLockedObjectByPath(mockTransaction, parentPath);
 				will(returnValue(parentLo));
 
-				oneOf(mockReq).getHeader(javax.ws.rs.core.HttpHeaders.USER_AGENT);
+				oneOf(mockReq).getHeader(HttpHeaders.USER_AGENT);
 				will(returnValue("Goliath"));
 
 				oneOf(mockResourceLocks).lock(with(any(ITransaction.class)), with(any(String.class)),

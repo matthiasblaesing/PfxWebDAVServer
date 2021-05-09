@@ -13,9 +13,6 @@ import nl.ellipsis.webdav.server.WebDAVConstants;
 import nl.ellipsis.webdav.server.locking.IResourceLocks;
 import nl.ellipsis.webdav.server.locking.LockedObject;
 import nl.ellipsis.webdav.server.locking.ResourceLocks;
-import nl.ellipsis.webdav.server.methods.AbstractMethod;
-import nl.ellipsis.webdav.server.methods.DoLock;
-import nl.ellipsis.webdav.server.methods.DoPut;
 import nl.ellipsis.webdav.server.testutil.MockTest;
 
 import org.jmock.Expectations;
@@ -76,7 +73,7 @@ public class DoPutTest extends MockTest {
 				oneOf(mockReq).getPathInfo();
 				will(returnValue(path));
 
-				oneOf(mockReq).getHeader(javax.ws.rs.core.HttpHeaders.USER_AGENT);
+				oneOf(mockReq).getHeader(HttpHeaders.USER_AGENT);
 				will(returnValue("Goliath agent"));
 
 				StoredObject parentSo = initFolderStoredObject();
@@ -134,7 +131,7 @@ public class DoPutTest extends MockTest {
 				oneOf(mockReq).getPathInfo();
 				will(returnValue(path));
 
-				oneOf(mockReq).getHeader(javax.ws.rs.core.HttpHeaders.USER_AGENT);
+				oneOf(mockReq).getHeader(HttpHeaders.USER_AGENT);
 				will(returnValue("Transmit agent"));
 
 				StoredObject parentSo = null;
@@ -170,7 +167,7 @@ public class DoPutTest extends MockTest {
 				oneOf(mockReq).getPathInfo();
 				will(returnValue(path));
 
-				oneOf(mockReq).getHeader(javax.ws.rs.core.HttpHeaders.USER_AGENT);
+				oneOf(mockReq).getHeader(HttpHeaders.USER_AGENT);
 				will(returnValue("WebDAVFS/1.5.0 (01500000) ....."));
 
 				StoredObject parentSo = null;
@@ -220,7 +217,7 @@ public class DoPutTest extends MockTest {
 				oneOf(mockReq).getPathInfo();
 				will(returnValue(path));
 
-				oneOf(mockReq).getHeader(javax.ws.rs.core.HttpHeaders.USER_AGENT);
+				oneOf(mockReq).getHeader(HttpHeaders.USER_AGENT);
 				will(returnValue("WebDAVFS/1.5.0 (01500000) ....."));
 
 				StoredObject parentSo = initFileStoredObject(resourceContent);
@@ -261,7 +258,7 @@ public class DoPutTest extends MockTest {
 				oneOf(mockResourceLocks).getLockedObjectByPath(mockTransaction, parentPath);
 				will(returnValue(parentLo));
 
-				oneOf(mockReq).getHeader(javax.ws.rs.core.HttpHeaders.USER_AGENT);
+				oneOf(mockReq).getHeader(HttpHeaders.USER_AGENT);
 				will(returnValue("Transmit agent"));
 
 				oneOf(mockResourceLocks).lock(with(any(ITransaction.class)), with(any(String.class)),
@@ -344,7 +341,7 @@ public class DoPutTest extends MockTest {
 				oneOf(mockReq).getPathInfo();
 				will(returnValue(path));
 
-				oneOf(mockReq).getHeader(javax.ws.rs.core.HttpHeaders.USER_AGENT);
+				oneOf(mockReq).getHeader(HttpHeaders.USER_AGENT);
 				will(returnValue("Transmit agent"));
 
 				oneOf(mockResourceLocks).getLockedObjectByPath(mockTransaction, parentPath);

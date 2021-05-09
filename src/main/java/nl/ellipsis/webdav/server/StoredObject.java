@@ -19,8 +19,6 @@ package nl.ellipsis.webdav.server;
 
 import java.util.Date;
 
-import org.apache.commons.lang.StringUtils;
-
 import nl.ellipsis.webdav.server.util.CharsetUtil;
 
 public class StoredObject {
@@ -193,7 +191,7 @@ public class StoredObject {
 
 	private static String getResourceName(String relativeUrl) {
 		String retval = null;
-		if(StringUtils.isNotEmpty(relativeUrl)) {
+		if(relativeUrl != null && (! relativeUrl.trim().isEmpty())) {
 			String[] s = relativeUrl.split(CharsetUtil.FORWARD_SLASH);
 			if(s.length>0) {
 				retval = s[s.length-1];

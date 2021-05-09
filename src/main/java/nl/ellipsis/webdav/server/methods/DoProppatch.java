@@ -17,23 +17,20 @@
 package nl.ellipsis.webdav.server.methods;
 
 import java.io.IOException;
-import java.util.HashMap;
 import java.util.Hashtable;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Vector;
 
-import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import javax.xml.parsers.DocumentBuilder;
 
-import org.springframework.http.HttpStatus;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
-import org.xml.sax.InputSource;
 
+import nl.ellipsis.webdav.HttpHeaders;
+import nl.ellipsis.webdav.HttpStatus;
 import nl.ellipsis.webdav.server.ITransaction;
 import nl.ellipsis.webdav.server.IWebDAVStore;
 import nl.ellipsis.webdav.server.StoredObject;
@@ -110,7 +107,7 @@ public class DoProppatch extends AbstractMethod {
 
 				if (so.isNullResource()) {
 					String methodsAllowed = DeterminableMethod.determineMethodsAllowed(so);
-					resp.addHeader(javax.ws.rs.core.HttpHeaders.ALLOW, methodsAllowed);
+					resp.addHeader(HttpHeaders.ALLOW, methodsAllowed);
 					resp.sendError(HttpServletResponse.SC_METHOD_NOT_ALLOWED);
 					return;
 				}

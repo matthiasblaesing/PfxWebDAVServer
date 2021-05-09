@@ -26,6 +26,7 @@ import java.util.Vector;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import nl.ellipsis.webdav.HttpHeaders;
 
 import org.apache.velocity.Template;
 import org.apache.velocity.VelocityContext;
@@ -54,7 +55,7 @@ public class DoGet extends DoHead {
 			StoredObject so = _store.getStoredObject(transaction, path);
 			if (so.isNullResource()) {
 				String methodsAllowed = DeterminableMethod.determineMethodsAllowed(so);
-				resp.addHeader(javax.ws.rs.core.HttpHeaders.ALLOW, methodsAllowed);
+				resp.addHeader(HttpHeaders.ALLOW, methodsAllowed);
 				resp.sendError(HttpServletResponse.SC_METHOD_NOT_ALLOWED);
 				return;
 			}
@@ -97,7 +98,7 @@ public class DoGet extends DoHead {
 
 			if (so.isNullResource()) {
 				String methodsAllowed = DeterminableMethod.determineMethodsAllowed(so);
-				resp.addHeader(javax.ws.rs.core.HttpHeaders.ALLOW, methodsAllowed);
+				resp.addHeader(HttpHeaders.ALLOW, methodsAllowed);
 				resp.sendError(HttpServletResponse.SC_METHOD_NOT_ALLOWED);
 				return;
 			}

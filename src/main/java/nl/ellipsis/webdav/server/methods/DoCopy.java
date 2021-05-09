@@ -21,13 +21,12 @@ import java.util.Hashtable;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import org.springframework.http.HttpStatus;
 
 import nl.ellipsis.webdav.HttpHeaders;
+import nl.ellipsis.webdav.HttpStatus;
 import nl.ellipsis.webdav.server.ITransaction;
 import nl.ellipsis.webdav.server.IWebDAVStore;
 import nl.ellipsis.webdav.server.StoredObject;
-import nl.ellipsis.webdav.server.WebDAVConstants;
 import nl.ellipsis.webdav.server.exceptions.AccessDeniedException;
 import nl.ellipsis.webdav.server.exceptions.LockFailedException;
 import nl.ellipsis.webdav.server.exceptions.ObjectAlreadyExistsException;
@@ -166,7 +165,7 @@ public class DoCopy extends AbstractMethod {
 
 				if (copySo.isNullResource()) {
 					String methodsAllowed = DeterminableMethod.determineMethodsAllowed(copySo);
-					resp.addHeader(javax.ws.rs.core.HttpHeaders.ALLOW, methodsAllowed);
+					resp.addHeader(HttpHeaders.ALLOW, methodsAllowed);
 					resp.sendError(HttpServletResponse.SC_METHOD_NOT_ALLOWED);
 					return false;
 				}
