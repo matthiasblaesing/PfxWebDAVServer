@@ -16,7 +16,8 @@
 package nl.ellipsis.webdav.server.methods;
 
 import java.io.IOException;
-import java.util.Hashtable;
+import java.util.HashMap;
+import java.util.Map;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
@@ -68,6 +69,7 @@ public class DoLock extends AbstractMethod {
 		_readOnly = readOnly;
 	}
 
+	@Override
 	public void execute(ITransaction transaction, HttpServletRequest req, HttpServletResponse resp)
 			throws IOException, LockFailedException {
 		_path = getRelativePath(req);
@@ -77,7 +79,6 @@ public class DoLock extends AbstractMethod {
 
 		if (_readOnly) {
 			resp.sendError(HttpServletResponse.SC_FORBIDDEN);
-			return;
 		} else {
 			_parentPath = URLUtil.getParentPath(_path);
 
@@ -97,10 +98,10 @@ public class DoLock extends AbstractMethod {
 			// because executing a LOCK without lock information causes a
 			// SC_BAD_REQUEST
 			_userAgent = req.getHeader(HttpHeaders.USER_AGENT);
-			if (_userAgent != null && _userAgent.indexOf("Darwin") != -1) {
+			if (_userAgent != null && _userAgent.contains("Darwin")) {
 				_macLockRequest = true;
 
-				String timeString = new Long(System.currentTimeMillis()).toString();
+				String timeString = Long.toString(System.currentTimeMillis());
 				_lockOwner = _userAgent.concat(timeString);
 			}
 
@@ -134,7 +135,6 @@ public class DoLock extends AbstractMethod {
 			doNullResourceLock(transaction, req, resp);
 		}
 
-		so = null;
 		_exclusive = false;
 		_type = null;
 		_lockOwner = null;
@@ -161,8 +161,6 @@ public class DoLock extends AbstractMethod {
 			resp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
 		} catch (LockFailedException e) {
 			sendLockFailError(transaction, req, resp);
-		} finally {
-			lo = null;
 		}
 
 	}
@@ -170,10 +168,8 @@ public class DoLock extends AbstractMethod {
 	private void doNullResourceLock(ITransaction transaction, HttpServletRequest req, HttpServletResponse resp)
 			throws IOException {
 
-		StoredObject parentSo, nullSo = null;
-
 		try {
-			parentSo = _store.getStoredObject(transaction, _parentPath);
+			StoredObject parentSo = _store.getStoredObject(transaction, _parentPath);
 			if (_parentPath != null && parentSo == null) {
 				_store.createFolder(transaction, _parentPath);
 			} else if (_parentPath != null && parentSo != null && parentSo.isResource()) {
@@ -181,13 +177,13 @@ public class DoLock extends AbstractMethod {
 				return;
 			}
 
-			nullSo = _store.getStoredObject(transaction, _path);
+			StoredObject nullSo = _store.getStoredObject(transaction, _path);
 			if (nullSo == null) {
 				// resource doesn't exist
 				_store.createResource(transaction, _path);
 
 				// Transmit expects 204 response-code, not 201
-				if (_userAgent != null && _userAgent.indexOf("Transmit") != -1) {
+				if (_userAgent != null && _userAgent.contains("Transmit")) {
 					LOG.debug("DoLock.execute() : do workaround for user agent '" + _userAgent + "'");
 					resp.setStatus(HttpServletResponse.SC_NO_CONTENT);
 				} else {
@@ -208,15 +204,9 @@ public class DoLock extends AbstractMethod {
 
 		} catch (LockFailedException e) {
 			sendLockFailError(transaction, req, resp);
-		} catch (WebDAVException e) {
+		} catch (WebDAVException | ServletException e) {
 			LOG.error("Sending internal error!", e);
 			resp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-		} catch (ServletException e) {
-			LOG.error("Sending internal error!", e);
-			resp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-		} finally {
-			parentSo = null;
-			nullSo = null;
 		}
 	}
 
@@ -237,8 +227,6 @@ public class DoLock extends AbstractMethod {
 				refreshLo.refreshTimeout(timeout);
 				// sending success response
 				generateXMLReport(transaction, resp, refreshLo);
-
-				refreshLo = null;
 			} else {
 				// no LockObject to given lockToken
 				resp.sendError(HttpServletResponse.SC_PRECONDITION_FAILED);
@@ -268,7 +256,7 @@ public class DoLock extends AbstractMethod {
 				int depth = getDepth(req);
 				int lockDuration = getTimeout(transaction, req);
 
-				boolean lockSuccess = false;
+				boolean lockSuccess;
 				if (_exclusive) {
 					lockSuccess = _resourceLocks.exclusiveLock(transaction, _path, _lockOwner, depth, lockDuration);
 				} else {
@@ -303,13 +291,12 @@ public class DoLock extends AbstractMethod {
 	private boolean getLockInformation(ITransaction transaction, HttpServletRequest req, HttpServletResponse resp)
 			throws ServletException, IOException {
 
-		Node lockInfoNode = null;
 		try {
 			Document document = getDocument(req);
 			// Get the root element of the document
 			Element rootElement = document.getDocumentElement();
 
-			lockInfoNode = rootElement;
+			Node lockInfoNode = rootElement;
 
 			if (lockInfoNode != null) {
 				NodeList childList = lockInfoNode.getChildNodes();
@@ -317,15 +304,12 @@ public class DoLock extends AbstractMethod {
 				Node lockTypeNode = null;
 				Node lockOwnerNode = null;
 
-				Node currentNode = null;
-				String nodeName = null;
-
 				for (int i = 0; i < childList.getLength(); i++) {
-					currentNode = childList.item(i);
+					Node currentNode = childList.item(i);
 
 					if (currentNode.getNodeType() == Node.ELEMENT_NODE || currentNode.getNodeType() == Node.TEXT_NODE) {
 
-						nodeName = currentNode.getNodeName();
+						String nodeName = currentNode.getNodeName();
 
 						if (nodeName.endsWith("locktype")) {
 							lockTypeNode = currentNode;
@@ -345,7 +329,7 @@ public class DoLock extends AbstractMethod {
 					String scope = null;
 					childList = lockScopeNode.getChildNodes();
 					for (int i = 0; i < childList.getLength(); i++) {
-						currentNode = childList.item(i);
+						Node currentNode = childList.item(i);
 
 						if (currentNode.getNodeType() == Node.ELEMENT_NODE) {
 							scope = currentNode.getNodeName();
@@ -368,7 +352,7 @@ public class DoLock extends AbstractMethod {
 				if (lockTypeNode != null) {
 					childList = lockTypeNode.getChildNodes();
 					for (int i = 0; i < childList.getLength(); i++) {
-						currentNode = childList.item(i);
+						Node currentNode = childList.item(i);
 
 						if (currentNode.getNodeType() == Node.ELEMENT_NODE) {
 							_type = currentNode.getNodeName();
@@ -390,7 +374,7 @@ public class DoLock extends AbstractMethod {
 				if (lockOwnerNode != null) {
 					childList = lockOwnerNode.getChildNodes();
 					for (int i = 0; i < childList.getLength(); i++) {
-						currentNode = childList.item(i);				
+						Node currentNode = childList.item(i);
 						if (currentNode.getNodeType() == Node.ELEMENT_NODE || currentNode.getNodeType() == Node.TEXT_NODE) {
 							_lockOwner = currentNode.hasChildNodes() ? currentNode.getFirstChild().getNodeValue() : currentNode.getNodeValue();
 						}
@@ -421,7 +405,7 @@ public class DoLock extends AbstractMethod {
 	 */
 	private int getTimeout(ITransaction transaction, HttpServletRequest req) {
 
-		int lockDuration = AbstractMethod.getDefaultTimeout();
+		int lockDuration;
 		String lockDurationStr = req.getHeader(HttpHeaders.TIMEOUT);
 
 		if (lockDurationStr == null) {
@@ -433,13 +417,13 @@ public class DoLock extends AbstractMethod {
 				lockDurationStr = lockDurationStr.substring(0, commaPos);
 			}
 			if (lockDurationStr.startsWith("Second-")) {
-				lockDuration = new Integer(lockDurationStr.substring(7)).intValue();
+				lockDuration = Integer.parseInt(lockDurationStr.substring(7));
 			} else {
 				if (lockDurationStr.equalsIgnoreCase("infinity")) {
 					lockDuration = AbstractMethod.getMaxTimeout();
 				} else {
 					try {
-						lockDuration = new Integer(lockDurationStr).intValue();
+						lockDuration = Integer.parseInt(lockDurationStr);
 					} catch (NumberFormatException e) {
 						lockDuration = AbstractMethod.getMaxTimeout();
 					}
@@ -530,8 +514,7 @@ public class DoLock extends AbstractMethod {
 		if (lockDuration < 0 || lockDuration > AbstractMethod.getMaxTimeout())
 			lockDuration = AbstractMethod.getDefaultTimeout();
 
-		boolean lockSuccess = false;
-		lockSuccess = _resourceLocks.exclusiveLock(transaction, _path, _lockOwner, depth, lockDuration);
+		boolean lockSuccess = _resourceLocks.exclusiveLock(transaction, _path, _lockOwner, depth, lockDuration);
 
 		if (lockSuccess) {
 			// Locks successfully placed - return information about
@@ -553,7 +536,7 @@ public class DoLock extends AbstractMethod {
 	 */
 	private void sendLockFailError(ITransaction transaction, HttpServletRequest req, HttpServletResponse resp)
 			throws IOException {
-		Hashtable<String, Integer> errorList = new Hashtable<String, Integer>();
+		Map<String, Integer> errorList = new HashMap<>();
 		errorList.put(_path, HttpStatus.LOCKED.value());
 		sendReport(req, resp, errorList);
 	}

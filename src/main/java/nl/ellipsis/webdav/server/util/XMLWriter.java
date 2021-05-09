@@ -24,11 +24,11 @@ import java.util.Map.Entry;
 
 /**
  * XMLWriter helper class.
- * 
+ *
  * @author <a href="mailto:remm@apache.org">Remy Maucherat</a>
  */
 public class XMLWriter {
-	
+
 	private static org.slf4j.Logger LOG = org.slf4j.LoggerFactory.getLogger(XMLWriter.class);
 
 	// -------------------------------------------------------------- Constants
@@ -79,7 +79,7 @@ public class XMLWriter {
 
 	/**
 	 * Retrieve generated XML.
-	 * 
+	 *
 	 * @return String containing the generated XML
 	 */
 	@Override
@@ -89,7 +89,7 @@ public class XMLWriter {
 
 	/**
 	 * Write property to the XML.
-	 * 
+	 *
 	 * @param namespace
 	 *           Namespace
 	 * @param namespaceInfo
@@ -107,7 +107,7 @@ public class XMLWriter {
 
 	/**
 	 * Write property to the XML.
-	 * 
+	 *
 	 * @param namespace
 	 *           Namespace
 	 * @param name
@@ -123,7 +123,7 @@ public class XMLWriter {
 
 	/**
 	 * Write property to the XML.
-	 * 
+	 *
 	 * @param namespace
 	 *           Namespace
 	 * @param name
@@ -135,7 +135,7 @@ public class XMLWriter {
 
 	/**
 	 * Write an element.
-	 * 
+	 *
 	 * @param name
 	 *           Element name
 	 * @param namespace
@@ -149,57 +149,76 @@ public class XMLWriter {
 
 	/**
 	 * Write an element.
-	 * 
-	 * @param namespace
-	 *           Namespace abbreviation
-	 * @param namespaceInfo
-	 *           Namespace info
-	 * @param name
-	 *           Element name
-	 * @param type
-	 *           Element type
+	 *
+	 * @param namespace Namespace abbreviation
+	 * @param namespaceInfo Namespace info
+	 * @param name Element name
+	 * @param type Element type
 	 */
 	public void writeElement(String namespace, String namespaceInfo, String name, int type) {
 		if (!StringUtils.isEmpty(namespace)) {
 			switch (type) {
 			case OPENING:
 				if (namespaceInfo != null) {
-					buffer.append("<" + namespace + CharsetUtil.COLON + name + " xmlns:" + namespace + "=\"" + namespaceInfo + "\">");
+					buffer.append("<")
+						.append(namespace)
+						.append(CharsetUtil.COLON)
+						.append(name).append(" xmlns:")
+						.append(namespace)
+						.append("=\"")
+						.append(namespaceInfo).append("\">");
 				} else {
-					buffer.append("<" + namespace + CharsetUtil.COLON + name + ">");
+					buffer.append("<")
+						.append(namespace)
+						.append(CharsetUtil.COLON)
+						.append(name)
+						.append(">");
 				}
 				break;
 			case CLOSING:
-				buffer.append("</" + namespace + CharsetUtil.COLON + name + ">\n");
+				buffer.append("</")
+					.append(namespace)
+					.append(CharsetUtil.COLON)
+					.append(name)
+					.append(">\n");
 				break;
 			case NO_CONTENT:
 			default:
 				if (!StringUtils.isEmpty(namespaceInfo)) {
-					buffer.append("<" + namespace + CharsetUtil.COLON + name + " xmlns:" + namespace + "=\"" + namespaceInfo + "\"/>");
+					buffer.append("<")
+						.append(namespace)
+						.append(CharsetUtil.COLON)
+						.append(name).append(" xmlns:")
+						.append(namespace).append("=\"")
+						.append(namespaceInfo)
+						.append("\"/>");
 				} else {
-					buffer.append("<" + namespace + CharsetUtil.COLON + name + "/>");
+					buffer.append("<")
+						.append(namespace)
+						.append(CharsetUtil.COLON)
+						.append(name).append("/>");
 				}
 				break;
 			}
 		} else {
 			switch (type) {
 			case OPENING:
-				buffer.append("<" + name + ">");
+				buffer.append("<").append(name).append(">");
 				break;
 			case CLOSING:
-				buffer.append("</" + name + ">\n");
+				buffer.append("</").append(name).append(">\n");
 				break;
 			case NO_CONTENT:
 			default:
-				buffer.append("<" + name + "/>");
+				buffer.append("<").append(name).append("/>");
 				break;
 			}
 		}
 	}
-	
+
 	/**
 	 * Write an element.
-	 * 
+	 *
 	 * @param namespace
 	 *           Namespace abbreviation
 	 * @param namespaceInfo
@@ -209,47 +228,73 @@ public class XMLWriter {
 	 * @param type
 	 *           Element type
 	 */
-	public void writeNSElement(String namespace, Map<String,String> namespacePrefixMap, String name, int type) {
+	public void writeNSElement(String namespace, Map<String, String> namespacePrefixMap, String name, int type) {
 		if (!StringUtils.isEmpty(namespace)) {
 			switch (type) {
 			case OPENING:
 				if (namespacePrefixMap != null && !namespacePrefixMap.isEmpty()) {
-					buffer.append("<" + namespace + ":" + name);
-					for(Entry<String, String> e : namespacePrefixMap.entrySet()) {
-						buffer.append(" xmlns:" + e.getKey() + "=\"" + e.getValue() + "\"");
+					buffer.append("<")
+						.append(namespace)
+						.append(":")
+						.append(name);
+					for (Entry<String, String> e : namespacePrefixMap.entrySet()) {
+						buffer.append(" xmlns:")
+							.append(e.getKey())
+							.append("=\"")
+							.append(e.getValue())
+							.append("\"");
 					}
 					buffer.append(">");
 				} else {
-					buffer.append("<" + namespace + CharsetUtil.COLON + name + ">");
+					buffer.append("<")
+						.append(namespace)
+						.append(CharsetUtil.COLON)
+						.append(name)
+						.append(">");
 				}
 				break;
 			case CLOSING:
-				buffer.append("</" + namespace + CharsetUtil.COLON + name + ">\n");
+				buffer.append("</")
+					.append(namespace)
+					.append(CharsetUtil.COLON)
+					.append(name)
+					.append(">\n");
 				break;
 			case NO_CONTENT:
 			default:
 				if (namespacePrefixMap != null && !namespacePrefixMap.isEmpty()) {
-					buffer.append("<" + namespace + CharsetUtil.COLON + name);
-					for(Entry<String, String> e : namespacePrefixMap.entrySet()) {
-						buffer.append(" xmlns:" + e.getKey() + "=\"" + e.getValue() + "\"");
+					buffer.append("<")
+						.append(namespace)
+						.append(CharsetUtil.COLON)
+						.append(name);
+					for (Entry<String, String> e : namespacePrefixMap.entrySet()) {
+						buffer.append(" xmlns:")
+							.append(e.getKey())
+							.append("=\"")
+							.append(e.getValue())
+							.append("\"");
 					}
 					buffer.append(">");
 				} else {
-					buffer.append("<" + namespace + CharsetUtil.COLON + name + ">");
+					buffer.append("<")
+						.append(namespace)
+						.append(CharsetUtil.COLON)
+						.append(name)
+						.append(">");
 				}
 				break;
 			}
 		} else {
 			switch (type) {
 			case OPENING:
-				buffer.append("<" + name + ">");
+				buffer.append("<").append(name).append(">");
 				break;
 			case CLOSING:
-				buffer.append("</" + name + ">\n");
+				buffer.append("</").append(name).append(">\n");
 				break;
 			case NO_CONTENT:
 			default:
-				buffer.append("<" + name + "/>");
+				buffer.append("<").append(name).append("/>");
 				break;
 			}
 		}
@@ -257,7 +302,7 @@ public class XMLWriter {
 
 	/**
 	 * Write text.
-	 * 
+	 *
 	 * @param text
 	 *           Text to append
 	 */
@@ -267,12 +312,12 @@ public class XMLWriter {
 
 	/**
 	 * Write data.
-	 * 
+	 *
 	 * @param data
 	 *           Data to append
 	 */
 	public void writeData(String data) {
-		buffer.append("<![CDATA[" + data + "]]>");
+		buffer.append("<![CDATA[").append(data).append("]]>");
 	}
 
 	/**

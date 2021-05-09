@@ -16,7 +16,8 @@
 package nl.ellipsis.webdav.server.methods;
 
 import java.io.IOException;
-import java.util.Hashtable;
+import java.util.HashMap;
+import java.util.Map;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -52,6 +53,7 @@ public class DoPut extends AbstractMethod {
 		_lazyFolderCreationOnPut = lazyFolderCreationOnPut;
 	}
 
+	@Override
 	public void execute(ITransaction transaction, HttpServletRequest req, HttpServletResponse resp)
 			throws IOException, LockFailedException {
 		String path = getRelativePath(req);
@@ -64,7 +66,7 @@ public class DoPut extends AbstractMethod {
 
 			_userAgent = req.getHeader(HttpHeaders.USER_AGENT);
 
-			Hashtable<String, Integer> errorList = new Hashtable<String, Integer>();
+			Map<String, Integer> errorList = new HashMap<>();
 
 			if (!checkLocks(transaction, req, resp, _resourceLocks, parentPath)) {
 				resp.setStatus(HttpStatus.LOCKED.value());
@@ -78,9 +80,8 @@ public class DoPut extends AbstractMethod {
 
 			String tempLockOwner = "doPut" + System.currentTimeMillis() + req.toString();
 			if (_resourceLocks.lock(transaction, path, tempLockOwner, false, 0, AbstractMethod.getTempTimeout(), TEMPORARY)) {
-				StoredObject parentSo, so = null;
 				try {
-					parentSo = _store.getStoredObject(transaction, parentPath);
+					StoredObject parentSo = _store.getStoredObject(transaction, parentPath);
 					if (parentPath != null && parentSo != null && parentSo.isResource()) {
 						resp.sendError(HttpServletResponse.SC_FORBIDDEN);
 						return;
@@ -94,7 +95,7 @@ public class DoPut extends AbstractMethod {
 						return;
 					}
 
-					so = _store.getStoredObject(transaction, path);
+					StoredObject so = _store.getStoredObject(transaction, path);
 
 					if (so == null) {
 						_store.createResource(transaction, path);
@@ -111,7 +112,7 @@ public class DoPut extends AbstractMethod {
 							}
 							String nullResourceLockToken = nullResourceLo.getID();
 							String[] lockTokens = getLockIdFromIfHeader(req);
-							String lockToken = null;
+							String lockToken;
 							if (lockTokens != null) {
 								lockToken = lockTokens[0];
 							} else {
@@ -171,10 +172,10 @@ public class DoPut extends AbstractMethod {
 	 * @param resp
 	 */
 	private void doUserAgentWorkaround(HttpServletResponse resp) {
-		if (_userAgent != null && _userAgent.indexOf("WebDAVFS") != -1 && _userAgent.indexOf("Transmit") == -1) {
+		if (_userAgent != null && _userAgent.contains("WebDAVFS") && !_userAgent.contains("Transmit")) {
 			LOG.debug("DoPut.execute() : do workaround for user agent '" + _userAgent + "'");
 			resp.setStatus(HttpServletResponse.SC_CREATED);
-		} else if (_userAgent != null && _userAgent.indexOf("Transmit") != -1) {
+		} else if (_userAgent != null && _userAgent.contains("Transmit")) {
 			// Transmit also uses WEBDAVFS 1.x.x but crashes
 			// with SC_CREATED response
 			LOG.debug("DoPut.execute() : do workaround for user agent '" + _userAgent + "'");

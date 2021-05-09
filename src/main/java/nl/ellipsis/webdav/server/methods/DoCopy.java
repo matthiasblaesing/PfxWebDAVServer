@@ -16,7 +16,8 @@
 package nl.ellipsis.webdav.server.methods;
 
 import java.io.IOException;
-import java.util.Hashtable;
+import java.util.HashMap;
+import java.util.Map;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -53,6 +54,7 @@ public class DoCopy extends AbstractMethod {
 		_readOnly = readOnly;
 	}
 
+	@Override
 	public void execute(ITransaction transaction, HttpServletRequest req, HttpServletResponse resp)
 			throws IOException, LockFailedException {
 		String path = getRelativePath(req);
@@ -63,8 +65,8 @@ public class DoCopy extends AbstractMethod {
 			String tempLockOwner = "doCopy" + System.currentTimeMillis() + req.toString();
 			if (_resourceLocks.lock(transaction, path, tempLockOwner, false, 0, AbstractMethod.getTempTimeout(), TEMPORARY)) {
 				try {
-					if (!copyResource(transaction, req, resp))
-						return;
+					if (!copyResource(transaction, req, resp)) {
+					}
 				} catch (AccessDeniedException e) {
 					resp.sendError(HttpServletResponse.SC_FORBIDDEN);
 				} catch (ObjectAlreadyExistsException e) {
@@ -90,7 +92,7 @@ public class DoCopy extends AbstractMethod {
 
 	/**
 	 * Copy a resource.
-	 * 
+	 *
 	 * @param transaction
 	 *            indicates that the method is within the scope of a WebDAV
 	 *            transaction
@@ -116,13 +118,12 @@ public class DoCopy extends AbstractMethod {
 		}
 
 		String path = getRelativePath(req);
-		
+
 		if (path.equals(destinationPath)) {
 			resp.sendError(HttpServletResponse.SC_FORBIDDEN);
 			return false;
 		}
 
-		Hashtable<String, Integer> errorList = new Hashtable<String, Integer>();
 		String parentPath = URLUtil.getParentPath(path);
 		String parentDestinationPath = URLUtil.getParentPath(destinationPath);
 
@@ -154,9 +155,8 @@ public class DoCopy extends AbstractMethod {
 		String lockOwner = "copyResource" + System.currentTimeMillis() + req.toString();
 
 		if (_resourceLocks.lock(transaction, destinationPath, lockOwner, false, 0, AbstractMethod.getTempTimeout(), TEMPORARY)) {
-			StoredObject copySo, destinationSo = null;
 			try {
-				copySo = _store.getStoredObject(transaction, path);
+				StoredObject copySo = _store.getStoredObject(transaction, path);
 				// Retrieve the resources
 				if (copySo == null) {
 					resp.sendError(HttpServletResponse.SC_NOT_FOUND);
@@ -170,9 +170,9 @@ public class DoCopy extends AbstractMethod {
 					return false;
 				}
 
-				errorList = new Hashtable<String, Integer>();
+				Map<String, Integer> errorList = new HashMap<>();
 
-				destinationSo = _store.getStoredObject(transaction, destinationPath);
+				StoredObject destinationSo = _store.getStoredObject(transaction, destinationPath);
 
 				if (overwrite) {
 					// Delete destination resource, if it exists
@@ -228,7 +228,7 @@ public class DoCopy extends AbstractMethod {
 	 * @throws IOException
 	 */
 	private void copy(ITransaction transaction, String sourcePath, String destinationPath,
-			Hashtable<String, Integer> errorList, HttpServletRequest req, HttpServletResponse resp)
+			Map<String, Integer> errorList, HttpServletRequest req, HttpServletResponse resp)
 			throws WebDAVException, IOException {
 
 		StoredObject sourceSo = _store.getStoredObject(transaction, sourcePath);
@@ -271,7 +271,7 @@ public class DoCopy extends AbstractMethod {
 	 *             if an error in the underlying store occurs
 	 */
 	private void copyFolder(ITransaction transaction, String sourcePath, String destinationPath,
-			Hashtable<String, Integer> errorList, HttpServletRequest req, HttpServletResponse resp)
+			Map<String, Integer> errorList, HttpServletRequest req, HttpServletResponse resp)
 			throws WebDAVException {
 
 		_store.createFolder(transaction, destinationPath);
@@ -305,13 +305,13 @@ public class DoCopy extends AbstractMethod {
 						copyFolder(transaction, childSourcePath, destinationSourcePath, errorList, req, resp);
 					}
 				} catch (AccessDeniedException e) {
-					errorList.put(destinationSourcePath, new Integer(HttpServletResponse.SC_FORBIDDEN));
+					errorList.put(destinationSourcePath, HttpServletResponse.SC_FORBIDDEN);
 				} catch (ObjectNotFoundException e) {
-					errorList.put(destinationSourcePath, new Integer(HttpServletResponse.SC_NOT_FOUND));
+					errorList.put(destinationSourcePath, HttpServletResponse.SC_NOT_FOUND);
 				} catch (ObjectAlreadyExistsException e) {
-					errorList.put(destinationSourcePath, new Integer(HttpServletResponse.SC_CONFLICT));
+					errorList.put(destinationSourcePath, HttpServletResponse.SC_CONFLICT);
 				} catch (WebDAVException e) {
-					errorList.put(destinationSourcePath, new Integer(HttpServletResponse.SC_INTERNAL_SERVER_ERROR));
+					errorList.put(destinationSourcePath, HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
 				}
 			}
 		}

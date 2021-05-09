@@ -43,6 +43,7 @@ public class DoUnlock extends DeterminableMethod {
 		_readOnly = readOnly;
 	}
 
+	@Override
 	public void execute(ITransaction transaction, HttpServletRequest req, HttpServletResponse resp)
 			throws IOException, LockFailedException {
 		String path = getRelativePath(req);
@@ -52,7 +53,6 @@ public class DoUnlock extends DeterminableMethod {
 
 		if (_readOnly) {
 			resp.sendError(HttpServletResponse.SC_FORBIDDEN);
-			return;
 		} else {
 			String tempLockOwner = "doUnlock" + System.currentTimeMillis() + req.toString();
 			try {
@@ -96,7 +96,7 @@ public class DoUnlock extends DeterminableMethod {
 					}
 				}
 			} catch (LockFailedException e) {
-				e.printStackTrace();
+				LOG.warn("", e);
 			} finally {
 				_resourceLocks.unlockTemporaryLockedObjects(transaction, path, tempLockOwner);
 			}

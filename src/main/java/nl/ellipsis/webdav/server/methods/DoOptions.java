@@ -24,7 +24,6 @@ import nl.ellipsis.webdav.HttpHeaders;
 import nl.ellipsis.webdav.server.ITransaction;
 import nl.ellipsis.webdav.server.IWebDAVStore;
 import nl.ellipsis.webdav.server.StoredObject;
-import nl.ellipsis.webdav.server.WebDAVConstants;
 import nl.ellipsis.webdav.server.exceptions.AccessDeniedException;
 import nl.ellipsis.webdav.server.exceptions.LockFailedException;
 import nl.ellipsis.webdav.server.exceptions.WebDAVException;
@@ -42,6 +41,7 @@ public class DoOptions extends DeterminableMethod {
 		_resourceLocks = resLocks;
 	}
 
+	@Override
 	public void execute(ITransaction transaction, HttpServletRequest req, HttpServletResponse resp)
 			throws IOException, LockFailedException {
 		String path = getRelativePath(req);
@@ -51,11 +51,10 @@ public class DoOptions extends DeterminableMethod {
 
 		String tempLockOwner = "doOptions" + System.currentTimeMillis() + req.toString();
 		if (_resourceLocks.lock(transaction, path, tempLockOwner, false, 0, AbstractMethod.getTempTimeout(), TEMPORARY)) {
-			StoredObject so = null;
 			try {
 				resp.addHeader(HttpHeaders.DAV, "1, 2");
 
-				so = _store.getStoredObject(transaction, path);
+				StoredObject so = _store.getStoredObject(transaction, path);
 				String methodsAllowed = determineMethodsAllowed(so);
 				resp.addHeader(HttpHeaders.ALLOW, methodsAllowed);
 				resp.addHeader(HttpHeaders.MS_AUTHOR_VIA, "DAV");

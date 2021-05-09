@@ -20,6 +20,7 @@ import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.Map;
 import javax.servlet.http.Cookie;
+import nl.ellipsis.webdav.server.LocalFileSystemStore;
 
 /**
  * General purpose request parsing and encoding utility methods.
@@ -30,6 +31,7 @@ import javax.servlet.http.Cookie;
  */
 
 public final class RequestUtil {
+	private static org.slf4j.Logger LOG = org.slf4j.LoggerFactory.getLogger(LocalFileSystemStore.class);
 
 	/**
 	 * Encode a cookie as per RFC 2109. The resulting string can be used as the
@@ -41,7 +43,7 @@ public final class RequestUtil {
 	 */
 	public static String encodeCookie(Cookie cookie) {
 
-		StringBuffer buf = new StringBuffer(cookie.getName());
+		StringBuilder buf = new StringBuilder(cookie.getName());
 		buf.append("=");
 		buf.append(cookie.getValue());
 
@@ -102,7 +104,7 @@ public final class RequestUtil {
 
 		char content[] = new char[message.length()];
 		message.getChars(0, message.length(), content, 0);
-		StringBuffer result = new StringBuffer(content.length + 50);
+		StringBuilder result = new StringBuilder(content.length + 50);
 		for (int i = 0; i < content.length; i++) {
 			switch (content[i]) {
 			case '<':
@@ -218,7 +220,7 @@ public final class RequestUtil {
 		if ((header == null) || (header.length() < 1))
 			return (new Cookie[0]);
 
-		ArrayList<Cookie> cookies = new ArrayList<Cookie>();
+		ArrayList<Cookie> cookies = new ArrayList<>();
 		while (header.length() > 0) {
 			int semicolon = header.indexOf(';');
 			if (semicolon < 0)
@@ -226,19 +228,16 @@ public final class RequestUtil {
 			if (semicolon == 0)
 				break;
 			String token = header.substring(0, semicolon);
-			if (semicolon < header.length())
+			if (semicolon < header.length()) {
 				header = header.substring(semicolon + 1);
-			else
+			} else {
 				header = "";
-			try {
-				int equals = token.indexOf('=');
-				if (equals > 0) {
-					String name = token.substring(0, equals).trim();
-					String value = token.substring(equals + 1).trim();
-					cookies.add(new Cookie(name, value));
-				}
-			} catch (Throwable e) {
-				;
+			}
+			int equals = token.indexOf('=');
+			if (equals > 0) {
+				String name = token.substring(0, equals).trim();
+				String value = token.substring(equals + 1).trim();
+				cookies.add(new Cookie(name, value));
 			}
 		}
 
@@ -256,12 +255,12 @@ public final class RequestUtil {
 	 * ahead of time, to properly deal with the case where the name or value
 	 * includes an encoded "=" or "&" character that would otherwise be interpreted
 	 * as a delimiter.
-	 * 
+	 *
 	 * @param map
 	 *            Map that accumulates the resulting parameters
 	 * @param data
 	 *            Input string containing request parameters
-	 * 
+	 *
 	 * @exception IllegalArgumentException
 	 *                if the data is malformed
 	 */
@@ -292,10 +291,10 @@ public final class RequestUtil {
 	 * Decode and return the specified URL-encoded String. When the byte array is
 	 * converted to a string, the system default character encoding is used... This
 	 * may be different than some other servers.
-	 * 
+	 *
 	 * @param str
 	 *            The url-encoded string
-	 * 
+	 *
 	 * @exception IllegalArgumentException
 	 *                if a '%' character is not followed by a valid 2-digit
 	 *                hexadecimal number
@@ -308,7 +307,7 @@ public final class RequestUtil {
 
 	/**
 	 * Decode and return the specified URL-encoded String.
-	 * 
+	 *
 	 * @param str
 	 *            The url-encoded string
 	 * @param enc
@@ -365,8 +364,9 @@ public final class RequestUtil {
 	 */
 	public static String URLDecode(byte[] bytes, String enc) {
 
-		if (bytes == null)
+		if (bytes == null) {
 			return (null);
+		}
 
 		int len = bytes.length;
 		int ix = 0;
@@ -383,8 +383,8 @@ public final class RequestUtil {
 		if (enc != null) {
 			try {
 				return new String(bytes, 0, ox, enc);
-			} catch (Exception e) {
-				e.printStackTrace();
+			} catch (UnsupportedEncodingException | RuntimeException e) {
+				LOG.warn("Failed to encode as string", e);
 			}
 		}
 		return new String(bytes, 0, ox);
@@ -393,7 +393,7 @@ public final class RequestUtil {
 
 	/**
 	 * Convert a byte character value to hexidecimal digit value.
-	 * 
+	 *
 	 * @param b
 	 *            the character value byte
 	 */
@@ -410,7 +410,7 @@ public final class RequestUtil {
 	/**
 	 * Put name and value pair in map. When name already exist, add value to array
 	 * of values.
-	 * 
+	 *
 	 * @param map
 	 *            The map to populate
 	 * @param name
@@ -419,7 +419,7 @@ public final class RequestUtil {
 	 *            The parameter value
 	 */
 	private static void putMapEntry(Map<String, String[]> map, String name, String value) {
-		String[] newValues = null;
+		String[] newValues;
 		String[] oldValues = (String[]) map.get(name);
 		if (oldValues == null) {
 			newValues = new String[1];
@@ -443,14 +443,14 @@ public final class RequestUtil {
 	 * includes an encoded "=" or "&" character that would otherwise be interpreted
 	 * as a delimiter. NOTE: byte array data is modified by this method. Caller
 	 * beware.
-	 * 
+	 *
 	 * @param map
 	 *            Map that accumulates the resulting parameters
 	 * @param data
 	 *            Input string containing request parameters
 	 * @param encoding
 	 *            Encoding to use for converting hex
-	 * 
+	 *
 	 * @exception UnsupportedEncodingException
 	 *                if the data is malformed
 	 */
@@ -461,7 +461,7 @@ public final class RequestUtil {
 			int ix = 0;
 			int ox = 0;
 			String key = null;
-			String value = null;
+			String value;
 			while (ix < data.length) {
 				byte c = data[ix++];
 				switch ((char) c) {

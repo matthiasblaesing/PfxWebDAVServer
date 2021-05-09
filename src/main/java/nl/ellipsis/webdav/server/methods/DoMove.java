@@ -16,7 +16,8 @@
 package nl.ellipsis.webdav.server.methods;
 
 import java.io.IOException;
-import java.util.Hashtable;
+import java.util.HashMap;
+import java.util.Map;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -46,6 +47,7 @@ public class DoMove extends AbstractMethod {
 		_readOnly = readOnly;
 	}
 
+	@Override
 	public void execute(ITransaction transaction, HttpServletRequest req, HttpServletResponse resp)
 			throws IOException, LockFailedException {
 		String sourcePath = getRelativePath(req);
@@ -55,7 +57,7 @@ public class DoMove extends AbstractMethod {
 		}
 
 		if (!_readOnly) {
-			Hashtable<String, Integer> errorList = new Hashtable<String, Integer>();
+			Map<String, Integer> errorList = new HashMap<>();
 
 			if (!checkLocks(transaction, req, resp, _resourceLocks, sourcePath)) {
 				resp.setStatus(HttpStatus.LOCKED.value());
@@ -78,8 +80,6 @@ public class DoMove extends AbstractMethod {
 				try {
 
 					if (_doCopy.copyResource(transaction, req, resp)) {
-
-						errorList = new Hashtable<String, Integer>();
 						_doDelete.deleteResource(transaction, sourcePath, errorList, req, resp);
 						if (!errorList.isEmpty()) {
 							sendReport(req, resp, errorList);

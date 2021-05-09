@@ -55,6 +55,7 @@ public class DoHead extends AbstractMethod {
 		_contentLength = contentLengthHeader;
 	}
 
+	@Override
 	public void execute(ITransaction transaction, HttpServletRequest req, HttpServletResponse resp)
 			throws IOException, LockFailedException {
 		String path = getRelativePath(req);

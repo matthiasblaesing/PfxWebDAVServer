@@ -28,6 +28,7 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import nl.ellipsis.webdav.server.exceptions.LockFailedException;
 
 import nl.ellipsis.webdav.server.exceptions.UnauthenticatedException;
 import nl.ellipsis.webdav.server.exceptions.WebDAVException;
@@ -69,7 +70,7 @@ public class WebDAVServletBean extends HttpServlet {
 	private static final boolean READ_ONLY = false;
 	protected ResourceLocks _resLocks;
 	protected IWebDAVStore _store;
-	private HashMap<String, IMethodExecutor> _methodMap = new HashMap<String, IMethodExecutor>();
+	private HashMap<String, IMethodExecutor> _methodMap = new HashMap<>();
 
 	public WebDAVServletBean() {
 		_resLocks = new ResourceLocks();
@@ -87,6 +88,7 @@ public class WebDAVServletBean extends HttpServlet {
 		_store = store;
 
 		IMimeTyper mimeTyper = new IMimeTyper() {
+			@Override
 			public String getMimeType(ITransaction transaction, String path) {
 				String retVal = _store.getStoredObject(transaction, path).getMimeType();
 				if (retVal == null) {
@@ -187,7 +189,7 @@ public class WebDAVServletBean extends HttpServlet {
 			e.printStackTrace(pw);
 			LOG.error("WebDAVException: " + sw.toString());
 			throw new ServletException(e);
-		} catch (Exception e) {
+		} catch (IOException | ServletException | RuntimeException e) {
 			java.io.StringWriter sw = new java.io.StringWriter();
 			java.io.PrintWriter pw = new java.io.PrintWriter(sw);
 			e.printStackTrace(pw);

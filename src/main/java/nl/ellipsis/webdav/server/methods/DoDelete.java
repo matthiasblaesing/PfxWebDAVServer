@@ -16,7 +16,8 @@
 package nl.ellipsis.webdav.server.methods;
 
 import java.io.IOException;
-import java.util.Hashtable;
+import java.util.HashMap;
+import java.util.Map;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -48,6 +49,7 @@ public class DoDelete extends AbstractMethod {
 		_readOnly = readOnly;
 	}
 
+	@Override
 	public void execute(ITransaction transaction, HttpServletRequest req, HttpServletResponse resp)
 			throws IOException, LockFailedException {
 		String path = getRelativePath(req);
@@ -56,8 +58,6 @@ public class DoDelete extends AbstractMethod {
 		}
 		if (!_readOnly) {
 			String parentPath = URLUtil.getParentPath(path);
-
-			Hashtable<String, Integer> errorList = new Hashtable<String, Integer>();
 
 			if (!checkLocks(transaction, req, resp, _resourceLocks, parentPath)) {
 				resp.setStatus(HttpStatus.LOCKED.value());
@@ -72,7 +72,7 @@ public class DoDelete extends AbstractMethod {
 			String tempLockOwner = "doDelete" + System.currentTimeMillis() + req.toString();
 			if (_resourceLocks.lock(transaction, path, tempLockOwner, false, 0, AbstractMethod.getTempTimeout(), TEMPORARY)) {
 				try {
-					errorList = new Hashtable<String, Integer>();
+					Map<String, Integer> errorList = new HashMap<>();
 					deleteResource(transaction, path, errorList, req, resp);
 					if (!errorList.isEmpty()) {
 						sendReport(req, resp, errorList);
@@ -115,7 +115,7 @@ public class DoDelete extends AbstractMethod {
 	 * @throws IOException
 	 *             when an error occurs while sending the response
 	 */
-	public void deleteResource(ITransaction transaction, String path, Hashtable<String, Integer> errorList,
+	public void deleteResource(ITransaction transaction, String path, Map<String, Integer> errorList,
 			HttpServletRequest req, HttpServletResponse resp) throws IOException, WebDAVException {
 
 		resp.setStatus(HttpServletResponse.SC_NO_CONTENT);
@@ -142,16 +142,15 @@ public class DoDelete extends AbstractMethod {
 			} else {
 				resp.sendError(HttpServletResponse.SC_NOT_FOUND);
 			}
-			so = null;
 		} else {
 			resp.sendError(HttpServletResponse.SC_FORBIDDEN);
 		}
 	}
 
 	/**
-	 * 
+	 *
 	 * helper method of deleteResource() deletes the folder and all of its contents
-	 * 
+	 *
 	 * @param transaction
 	 *            indicates that the method is within the scope of a WebDAV
 	 *            transaction
@@ -166,43 +165,41 @@ public class DoDelete extends AbstractMethod {
 	 * @throws WebDAVException
 	 *             if an error in the underlying store occurs
 	 */
-	private void deleteFolder(ITransaction transaction, String path, Hashtable<String, Integer> errorList,
+	private void deleteFolder(ITransaction transaction, String path, Map<String, Integer> errorList,
 			HttpServletRequest req, HttpServletResponse resp) throws WebDAVException {
 
 		String[] children = _store.getChildrenNames(transaction, path);
 		children = children == null ? new String[] {} : children;
-		StoredObject so = null;
 		for (int i = children.length - 1; i >= 0; i--) {
 			String childPath = URLUtil.getCleanPath(path, children[i]);
 			try {
-				so = _store.getStoredObject(transaction, childPath);
+				StoredObject so = _store.getStoredObject(transaction, childPath);
 				if (so.isResource()) {
 					_store.removeObject(transaction, childPath);
 				} else {
 					deleteFolder(transaction, childPath, errorList, req, resp);
 					_store.removeObject(transaction, childPath);
 				}
-			} catch (Exception e) {
+			} catch (RuntimeException e) {
 			    if(!recordException(path + "/" + children[i], errorList, e)) {
 			        throw e;
 			    }
 			}
 		}
-		so = null;
 	}
-	
-	private boolean recordException(String path, Hashtable<String, Integer> errorList, Exception e) {
-	    
-	    if(e instanceof AccessDeniedException) {
-                errorList.put(path, new Integer(HttpServletResponse.SC_FORBIDDEN));
-	    } else if(e instanceof ObjectNotFoundException) {
-                errorList.put(path, new Integer(HttpServletResponse.SC_NOT_FOUND));
-        } else if(e instanceof WebDAVException) {
-                errorList.put(path, new Integer(HttpServletResponse.SC_INTERNAL_SERVER_ERROR));
-        } else {
-            return false;
-        }
-	    return true;
+
+	private boolean recordException(String path, Map<String, Integer> errorList, Exception e) {
+
+		if (e instanceof AccessDeniedException) {
+			errorList.put(path, HttpServletResponse.SC_FORBIDDEN);
+		} else if (e instanceof ObjectNotFoundException) {
+			errorList.put(path, HttpServletResponse.SC_NOT_FOUND);
+		} else if (e instanceof WebDAVException) {
+			errorList.put(path, HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+		} else {
+			return false;
+		}
+		return true;
 	}
 
 }

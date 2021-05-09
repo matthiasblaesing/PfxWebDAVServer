@@ -16,12 +16,15 @@
 package nl.ellipsis.webdav.server.methods;
 
 import java.io.IOException;
-import java.util.Enumeration;
-import java.util.Hashtable;
-import java.util.Vector;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import javax.servlet.ServletException;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.xml.parsers.ParserConfigurationException;
 import nl.ellipsis.webdav.HttpStatus;
 
 import org.w3c.dom.Document;
@@ -39,19 +42,14 @@ import nl.ellipsis.webdav.server.exceptions.WebDAVException;
 import nl.ellipsis.webdav.server.locking.LockedObject;
 import nl.ellipsis.webdav.server.locking.ResourceLocks;
 import nl.ellipsis.webdav.server.util.CharsetUtil;
-import nl.ellipsis.webdav.server.util.URLEncoder;
 import nl.ellipsis.webdav.server.util.URLUtil;
 import nl.ellipsis.webdav.server.util.XMLHelper;
 import nl.ellipsis.webdav.server.util.XMLWriter;
+import org.xml.sax.SAXException;
 
 public class DoPropfind extends AbstractMethod {
 
 	private static org.slf4j.Logger LOG = org.slf4j.LoggerFactory.getLogger(DoPropfind.class);
-
-	/**
-	 * Array containing the safe characters set.
-	 */
-	protected static URLEncoder URL_ENCODER;
 
 	/**
 	 * PROPFIND - Specify a property mask.
@@ -80,6 +78,7 @@ public class DoPropfind extends AbstractMethod {
 		_mimeTyper = mimeTyper;
 	}
 
+	@Override
 	public void execute(ITransaction transaction, HttpServletRequest req, HttpServletResponse resp)
 			throws IOException, LockFailedException {
 		String path = getRelativePath(req);
@@ -93,16 +92,15 @@ public class DoPropfind extends AbstractMethod {
 
 		if (_resourceLocks.lock(transaction, path, tempLockOwner, false, _depth, AbstractMethod.getTempTimeout(), TEMPORARY)) {
 
-			StoredObject so = null;
 			try {
-				so = _store.getStoredObject(transaction, path);
+				StoredObject so = _store.getStoredObject(transaction, path);
 				if (so == null) {
 					resp.setContentType("text/xml; charset=UTF-8");
 					resp.sendError(HttpServletResponse.SC_NOT_FOUND, req.getRequestURI());
 					return;
 				}
 
-				Vector<String> properties = null;
+				List<String> properties = null;
 				path = getRelativePath(req);
 
 				int propertyFindType = FIND_ALL_PROP;
@@ -122,7 +120,7 @@ public class DoPropfind extends AbstractMethod {
 						} else if (XMLHelper.findSubElement(rootElement, "allprop") != null) {
 							propertyFindType = FIND_ALL_PROP;
 						}
-					} catch (Exception e) {
+					} catch (IOException | ServletException | ParserConfigurationException | SAXException | RuntimeException e) {
 						LOG.error("Sending internal error!", e);
 						resp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
 						return;
@@ -161,7 +159,7 @@ public class DoPropfind extends AbstractMethod {
 				_resourceLocks.unlockTemporaryLockedObjects(transaction, path, tempLockOwner);
 			}
 		} else {
-			Hashtable<String, Integer> errorList = new Hashtable<String, Integer>();
+			Map<String, Integer> errorList = new HashMap<>();
 			errorList.put(path, HttpStatus.LOCKED.value());
 			sendReport(req, resp, errorList);
 		}
@@ -183,7 +181,7 @@ public class DoPropfind extends AbstractMethod {
 	 *             if an error in the underlying store occurs
 	 */
 	private void recursiveParseProperties(ITransaction transaction, String currentPath, HttpServletRequest req,
-			XMLWriter generatedXML, int propertyFindType, Vector<String> properties, int depth)
+			XMLWriter generatedXML, int propertyFindType, List<String> properties, int depth)
 			throws WebDAVException {
 
 		parseProperties(transaction, req, generatedXML, currentPath, propertyFindType, properties);
@@ -201,7 +199,7 @@ public class DoPropfind extends AbstractMethod {
 
 	/**
 	 * Propfind helper method.
-	 * 
+	 *
 	 * @param req
 	 *            The servlet request
 	 * @param generatedXML
@@ -215,7 +213,7 @@ public class DoPropfind extends AbstractMethod {
 	 *            contains those properties
 	 */
 	private void parseProperties(ITransaction transaction, HttpServletRequest req, XMLWriter generatedXML, String path,
-			int type, Vector<String> propertiesVector) throws WebDAVException {
+			int type, List<String> propertiesVector) throws WebDAVException {
 
 		StoredObject so = _store.getStoredObject(transaction, path);
 
@@ -227,8 +225,7 @@ public class DoPropfind extends AbstractMethod {
 		// ResourceInfo resourceInfo = new ResourceInfo(path, resources);
 
 		generatedXML.writeElement(NS_DAV_PREFIX,WebDAVConstants.XMLTag.RESPONSE,XMLWriter.OPENING);
-		String status = new String(
-				"HTTP/1.1 " + HttpServletResponse.SC_OK + " " + HttpStatus.OK.getReasonPhrase());
+		String status = "HTTP/1.1 " + HttpServletResponse.SC_OK + " " + HttpStatus.OK.getReasonPhrase();
 
 		// Generating href element
 		generatedXML.writeElement(NS_DAV_PREFIX,WebDAVConstants.XMLTag.HREF,XMLWriter.OPENING);
@@ -316,72 +313,81 @@ public class DoPropfind extends AbstractMethod {
 
 		case FIND_BY_PROPERTY:
 
-			Vector<String> propertiesNotFound = new Vector<String>();
+			List<String> propertiesNotFound = new ArrayList<>();
 
 			// Parse the list of properties
 
 			generatedXML.writeElement(NS_DAV_PREFIX,WebDAVConstants.XMLTag.PROPSTAT, XMLWriter.OPENING);
 			generatedXML.writeElement(NS_DAV_PREFIX,WebDAVConstants.XMLTag.PROP, XMLWriter.OPENING);
 
-			Enumeration<String> properties = propertiesVector.elements();
+			for(String property: propertiesVector) {
 
-			while (properties.hasMoreElements()) {
-
-				String property = (String) properties.nextElement();
-
-				if (property.equals(WebDAVConstants.XMLTag.CREATIONDATE)) {
-					generatedXML.writeProperty(NS_DAV_PREFIX,WebDAVConstants.XMLTag.CREATIONDATE, creationdate);
-				} else if (property.equals("DAV::displayname")) {
-					generatedXML.writeElement(NS_DAV_PREFIX,WebDAVConstants.XMLTag.DISPLAYNAME, XMLWriter.OPENING);
+				switch (property) {
+				case WebDAVConstants.XMLTag.CREATIONDATE:
+					generatedXML.writeProperty(NS_DAV_PREFIX, WebDAVConstants.XMLTag.CREATIONDATE, creationdate);
+					break;
+				case "DAV::displayname":
+					generatedXML.writeElement(NS_DAV_PREFIX, WebDAVConstants.XMLTag.DISPLAYNAME, XMLWriter.OPENING);
 					generatedXML.writeData(resourceName);
-					generatedXML.writeElement(NS_DAV_PREFIX,WebDAVConstants.XMLTag.DISPLAYNAME, XMLWriter.CLOSING);
-				} else if (property.equals(WebDAVConstants.XMLTag.GET_CONTENTLANGUAGE)) {
+					generatedXML.writeElement(NS_DAV_PREFIX, WebDAVConstants.XMLTag.DISPLAYNAME, XMLWriter.CLOSING);
+					break;
+				case WebDAVConstants.XMLTag.GET_CONTENTLANGUAGE:
 					if (isFolder) {
-						propertiesNotFound.addElement(property);
+						propertiesNotFound.add(property);
 					} else {
-						generatedXML.writeElement(NS_DAV_PREFIX,WebDAVConstants.XMLTag.GET_CONTENTLANGUAGE, XMLWriter.NO_CONTENT);
+						generatedXML.writeElement(NS_DAV_PREFIX, WebDAVConstants.XMLTag.GET_CONTENTLANGUAGE, XMLWriter.NO_CONTENT);
 					}
-				} else if (property.equals(WebDAVConstants.XMLTag.GET_CONTENTLENGTH)) {
+					break;
+				case WebDAVConstants.XMLTag.GET_CONTENTLENGTH:
 					if (isFolder) {
-						propertiesNotFound.addElement(property);
+						propertiesNotFound.add(property);
 					} else {
-						generatedXML.writeProperty(NS_DAV_PREFIX,WebDAVConstants.XMLTag.GET_CONTENTLENGTH, resourceLength);
+						generatedXML.writeProperty(NS_DAV_PREFIX, WebDAVConstants.XMLTag.GET_CONTENTLENGTH, resourceLength);
 					}
-				} else if (property.equals(WebDAVConstants.XMLTag.GET_CONTENTTYPE)) {
+					break;
+				case WebDAVConstants.XMLTag.GET_CONTENTTYPE:
 					if (isFolder) {
-						propertiesNotFound.addElement(property);
+						propertiesNotFound.add(property);
 					} else {
-						String mimeType = (so.getMimeType()!=null ? so.getMimeType() : _mimeTyper.getMimeType(transaction, path));
-						generatedXML.writeProperty(NS_DAV_PREFIX,WebDAVConstants.XMLTag.GET_CONTENTTYPE, mimeType);
+						String mimeType = (so.getMimeType() != null ? so.getMimeType() : _mimeTyper.getMimeType(transaction, path));
+						generatedXML.writeProperty(NS_DAV_PREFIX, WebDAVConstants.XMLTag.GET_CONTENTTYPE, mimeType);
 					}
-				} else if (property.equals(WebDAVConstants.XMLTag.GET_ETAG)) {
+					break;
+				case WebDAVConstants.XMLTag.GET_ETAG:
 					if (isFolder || so.isNullResource()) {
-						propertiesNotFound.addElement(property);
+						propertiesNotFound.add(property);
 					} else {
-						generatedXML.writeProperty(NS_DAV_PREFIX,WebDAVConstants.XMLTag.GET_ETAG, getETag(so));
+						generatedXML.writeProperty(NS_DAV_PREFIX, WebDAVConstants.XMLTag.GET_ETAG, getETag(so));
 					}
-				} else if (property.equals(WebDAVConstants.XMLTag.GET_LASTMODIFIED)) {
-					if (isFolder && lastModified==null) {
-						propertiesNotFound.addElement(property);
+					break;
+				case WebDAVConstants.XMLTag.GET_LASTMODIFIED:
+					if (isFolder && lastModified == null) {
+						propertiesNotFound.add(property);
 					} else {
-						generatedXML.writeProperty(NS_DAV_PREFIX,WebDAVConstants.XMLTag.GET_LASTMODIFIED, lastModified);
+						generatedXML.writeProperty(NS_DAV_PREFIX, WebDAVConstants.XMLTag.GET_LASTMODIFIED, lastModified);
 					}
-				} else if (property.equals(WebDAVConstants.XMLTag.RESOURCETYPE)) {
+					break;
+				case WebDAVConstants.XMLTag.RESOURCETYPE:
 					if (isFolder) {
-						generatedXML.writeElement(NS_DAV_PREFIX,WebDAVConstants.XMLTag.RESOURCETYPE, XMLWriter.OPENING);
-						generatedXML.writeElement(NS_DAV_PREFIX,WebDAVConstants.XMLTag.COLLECTION, XMLWriter.NO_CONTENT);
-						generatedXML.writeElement(NS_DAV_PREFIX,WebDAVConstants.XMLTag.RESOURCETYPE, XMLWriter.CLOSING);
+						generatedXML.writeElement(NS_DAV_PREFIX, WebDAVConstants.XMLTag.RESOURCETYPE, XMLWriter.OPENING);
+						generatedXML.writeElement(NS_DAV_PREFIX, WebDAVConstants.XMLTag.COLLECTION, XMLWriter.NO_CONTENT);
+						generatedXML.writeElement(NS_DAV_PREFIX, WebDAVConstants.XMLTag.RESOURCETYPE, XMLWriter.CLOSING);
 					} else {
-						generatedXML.writeElement(NS_DAV_PREFIX,WebDAVConstants.XMLTag.RESOURCETYPE, XMLWriter.NO_CONTENT);
+						generatedXML.writeElement(NS_DAV_PREFIX, WebDAVConstants.XMLTag.RESOURCETYPE, XMLWriter.NO_CONTENT);
 					}
-				} else if (property.equals(WebDAVConstants.XMLTag.SOURCE)) {
-					generatedXML.writeProperty(NS_DAV_PREFIX,WebDAVConstants.XMLTag.SOURCE, "");
-				} else if (property.equals(WebDAVConstants.XMLTag.SUPPORTEDLOCK)) {
+					break;
+				case WebDAVConstants.XMLTag.SOURCE:
+					generatedXML.writeProperty(NS_DAV_PREFIX, WebDAVConstants.XMLTag.SOURCE, "");
+					break;
+				case WebDAVConstants.XMLTag.SUPPORTEDLOCK:
 					writeSupportedLockElements(transaction, generatedXML, path);
-				} else if (property.equals(WebDAVConstants.XMLTag.LOCKDISCOVERY)) {
+					break;
+				case WebDAVConstants.XMLTag.LOCKDISCOVERY:
 					writeLockDiscoveryElements(transaction, generatedXML, path);
-				} else {
-					propertiesNotFound.addElement(property);
+					break;
+				default:
+					propertiesNotFound.add(property);
+					break;
 				}
 			}
 
@@ -391,18 +397,16 @@ public class DoPropfind extends AbstractMethod {
 			generatedXML.writeElement(NS_DAV_PREFIX,WebDAVConstants.XMLTag.STATUS, XMLWriter.CLOSING);
 			generatedXML.writeElement(NS_DAV_PREFIX,WebDAVConstants.XMLTag.PROPSTAT, XMLWriter.CLOSING);
 
-			Enumeration<String> propertiesNotFoundList = propertiesNotFound.elements();
+			if (! propertiesNotFound.isEmpty()) {
 
-			if (propertiesNotFoundList.hasMoreElements()) {
-
-				status = new String("HTTP/1.1 " + HttpServletResponse.SC_NOT_FOUND + " "
-						+ HttpStatus.NOT_FOUND.getReasonPhrase());
+				status = "HTTP/1.1 " + HttpServletResponse.SC_NOT_FOUND + " "
+					+ HttpStatus.NOT_FOUND.getReasonPhrase();
 
 				generatedXML.writeElement(NS_DAV_PREFIX,WebDAVConstants.XMLTag.PROPSTAT, XMLWriter.OPENING);
 				generatedXML.writeElement(NS_DAV_PREFIX,WebDAVConstants.XMLTag.PROP, XMLWriter.OPENING);
 
-				while (propertiesNotFoundList.hasMoreElements()) {
-					generatedXML.writeElement(NS_DAV_PREFIX,(String) propertiesNotFoundList.nextElement(), XMLWriter.NO_CONTENT);
+				for(String property: propertiesNotFound) {
+					generatedXML.writeElement(NS_DAV_PREFIX, property, XMLWriter.NO_CONTENT);
 				}
 
 				generatedXML.writeElement(NS_DAV_PREFIX,WebDAVConstants.XMLTag.PROP, XMLWriter.CLOSING);
@@ -415,8 +419,6 @@ public class DoPropfind extends AbstractMethod {
 		}
 
 		generatedXML.writeElement(NS_DAV_PREFIX,WebDAVConstants.XMLTag.RESPONSE, XMLWriter.CLOSING);
-
-		so = null;
 	}
 
 	private void writeSupportedLockElements(ITransaction transaction, XMLWriter generatedXML, String path) {
@@ -471,8 +473,6 @@ public class DoPropfind extends AbstractMethod {
 		}
 
 		generatedXML.writeElement(NS_DAV_PREFIX,WebDAVConstants.XMLTag.SUPPORTEDLOCK, XMLWriter.CLOSING);
-
-		lo = null;
 	}
 
 	private void writeLockDiscoveryElements(ITransaction transaction, XMLWriter generatedXML, String path) {
@@ -518,7 +518,7 @@ public class DoPropfind extends AbstractMethod {
 			}
 
 			int timeout = (int) (lo.getTimeoutMillis() / 1000);
-			String timeoutStr = new Integer(timeout).toString();
+			String timeoutStr = Integer.toString(timeout);
 			generatedXML.writeElement(NS_DAV_PREFIX,WebDAVConstants.XMLTag.TIMEOUT, XMLWriter.OPENING);
 			generatedXML.writeText("Second-" + timeoutStr);
 			generatedXML.writeElement(NS_DAV_PREFIX,WebDAVConstants.XMLTag.TIMEOUT, XMLWriter.CLOSING);
@@ -537,8 +537,6 @@ public class DoPropfind extends AbstractMethod {
 		} else {
 			generatedXML.writeElement(NS_DAV_PREFIX,WebDAVConstants.XMLTag.LOCKDISCOVERY, XMLWriter.NO_CONTENT);
 		}
-
-		lo = null;
 	}
 
 }

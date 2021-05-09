@@ -16,7 +16,8 @@
 package nl.ellipsis.webdav.server.methods;
 
 import java.io.IOException;
-import java.util.Hashtable;
+import java.util.HashMap;
+import java.util.Map;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -47,6 +48,7 @@ public class DoMkcol extends AbstractMethod {
 		_readOnly = readOnly;
 	}
 
+	@Override
 	public void execute(ITransaction transaction, HttpServletRequest req, HttpServletResponse resp)
 			throws IOException, LockFailedException {
 		String path = getRelativePath(req);
@@ -56,8 +58,6 @@ public class DoMkcol extends AbstractMethod {
 
 		if (!_readOnly) {
 			String parentPath = URLUtil.getParentPath(path);
-
-			Hashtable<String, Integer> errorList = new Hashtable<String, Integer>();
 
 			if (!checkLocks(transaction, req, resp, _resourceLocks, parentPath)) {
 				// TODO remove
@@ -71,16 +71,15 @@ public class DoMkcol extends AbstractMethod {
 			String tempLockOwner = "doMkcol" + System.currentTimeMillis() + req.toString();
 
 			if (_resourceLocks.lock(transaction, path, tempLockOwner, false, 0, AbstractMethod.getTempTimeout(), TEMPORARY)) {
-				StoredObject parentSo, so = null;
 				try {
-					parentSo = _store.getStoredObject(transaction, parentPath);
+					StoredObject parentSo = _store.getStoredObject(transaction, parentPath);
 					if (parentSo == null) {
 						// parent not exists
 						resp.sendError(HttpServletResponse.SC_CONFLICT);
 						return;
 					}
 					if (parentPath != null && parentSo.isFolder()) {
-						so = _store.getStoredObject(transaction, path);
+						StoredObject so = _store.getStoredObject(transaction, path);
 						if (so == null) {
 							_store.createFolder(transaction, path);
 							resp.setStatus(HttpServletResponse.SC_CREATED);
@@ -96,7 +95,7 @@ public class DoMkcol extends AbstractMethod {
 								}
 								String nullResourceLockToken = nullResourceLo.getID();
 								String[] lockTokens = getLockIdFromIfHeader(req);
-								String lockToken = null;
+								String lockToken;
 								if (lockTokens != null)
 									lockToken = lockTokens[0];
 								else {
@@ -124,6 +123,7 @@ public class DoMkcol extends AbstractMethod {
 									LOG.debug("MkCol on lock-null-resource with wrong lock-token!"
 											+ "\n Sending multistatus error report!");
 
+									Map<String, Integer> errorList = new HashMap<>();
 									errorList.put(path, HttpStatus.LOCKED.value());
 									sendReport(req, resp, errorList);
 								}

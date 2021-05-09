@@ -19,10 +19,11 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.StringReader;
 import java.io.StringWriter;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Vector;
+import java.util.List;
 
 import javax.xml.XMLConstants;
 import javax.xml.parsers.DocumentBuilder;
@@ -34,6 +35,7 @@ import javax.xml.transform.TransformerException;
 import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
+import nl.ellipsis.webdav.server.LocalFileSystemStore;
 
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
@@ -43,9 +45,10 @@ import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
 public class XMLHelper {
-	
+	private static org.slf4j.Logger LOG = org.slf4j.LoggerFactory.getLogger(LocalFileSystemStore.class);
+
 	private static DocumentBuilder documentBuilder;
-	
+
 	/**
 	 * Return JAXP document builder instance.
 	 * @throws ParserConfigurationException 
@@ -103,6 +106,7 @@ public class XMLHelper {
 	}
 
 	private static class NoOpEntityResolver implements EntityResolver {
+		@Override
 		public InputSource resolveEntity(String publicId, String systemId) {
 			return new InputSource(new ByteArrayInputStream(new byte[]{}));
 		}
@@ -125,64 +129,50 @@ public class XMLHelper {
 
 	public static String format(String xml) {
 		String retval = xml;
-		
+
 		Document document = null;
-		StringReader sr = null;
-		try {
-	    	sr = new StringReader(xml);
-	    	InputSource inputSource = new InputSource(sr);
-	        document = getDocumentBuilder().parse(inputSource);
-		} catch (SAXException | IOException | ParserConfigurationException e) {
-			e.printStackTrace();
-		} finally {
-			sr.close();
-		}
-	    if(document!=null) {
+		try (StringReader sr = new StringReader(xml)) {
+			InputSource inputSource = new InputSource(sr);
+			document = getDocumentBuilder().parse(inputSource);
 			retval = format(document);
-	    }
-	    return retval;
+		} catch (SAXException | IOException | ParserConfigurationException e) {
+			LOG.warn("Failed to format XML", e);
+		}
+		return retval;
 	}
 
 
 	public static String format(Document document) {
 		String retval = null;
-        if(document!=null) {
-    		TransformerFactory transfac = TransformerFactory.newInstance();
-            StringWriter sw = null;
-    		try {
-    			Transformer transformer = transfac.newTransformer();
-    			
-    			transformer.setOutputProperty(OutputKeys.ENCODING, "UTF-8");
-    			transformer.setOutputProperty(OutputKeys.OMIT_XML_DECLARATION, "yes");
-				transformer.setOutputProperty("{http://xml.apache.org/xslt}indent-amount", "2");
-    			transformer.setOutputProperty(OutputKeys.INDENT, "yes");
+		if (document != null) {
+			TransformerFactory transfac = TransformerFactory.newInstance();
 
-    			  //create string from xml tree
-    	        sw = new StringWriter();
-    	        StreamResult result = new StreamResult(sw);
-    	        
-    	        DOMSource source = new DOMSource(document);
-    	        
-    	        transformer.transform(source, result);
-    	        
-    	        retval = sw.toString();
-    		} catch (TransformerException e) {
-    			e.printStackTrace();
-    		} finally {
-    			try {
-					sw.close();
-				} catch (IOException e) {
-					e.printStackTrace();
-				}
-    		}
-        }
-        return retval;
+			try(StringWriter sw = new StringWriter()) {
+				Transformer transformer = transfac.newTransformer();
+
+				transformer.setOutputProperty(OutputKeys.ENCODING, "UTF-8");
+				transformer.setOutputProperty(OutputKeys.OMIT_XML_DECLARATION, "yes");
+				transformer.setOutputProperty("{http://xml.apache.org/xslt}indent-amount", "2");
+				transformer.setOutputProperty(OutputKeys.INDENT, "yes");
+
+				//create string from xml tree
+				StreamResult result = new StreamResult(sw);
+
+				DOMSource source = new DOMSource(document);
+
+				transformer.transform(source, result);
+
+				retval = sw.toString();
+			} catch (IOException | TransformerException e) {
+				LOG.warn("Failed to format XML", e);
+			}
+		}
+		return retval;
 	}
 
 
-	public static Vector<String> getPropertiesFromXML(Node propNode) {
-		Vector<String> properties;
-		properties = new Vector<String>();
+	public static List<String> getPropertiesFromXML(Node propNode) {
+		List<String> properties = new ArrayList<>();
 		NodeList childList = propNode.getChildNodes();
 	
 		for (int i = 0; i < childList.getLength(); i++) {
@@ -190,14 +180,14 @@ public class XMLHelper {
 			if (currentNode.getNodeType() == Node.ELEMENT_NODE) {
 				String nodeName = currentNode.getLocalName();
 				String namespace = currentNode.getNamespaceURI();
-				String propertyName = null;
+				String propertyName;
 				if (nodeName.indexOf(':') != -1) {
 					propertyName = nodeName.substring(nodeName.indexOf(':') + 1);
 				} else {
 					propertyName = nodeName;
 				}
 				// href is a live property which is handled differently
-				properties.addElement(propertyName);
+				properties.add(propertyName);
 			}
 		}
 		return properties;

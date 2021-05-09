@@ -26,7 +26,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.file.Files;
-import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.security.Principal;
@@ -55,10 +54,12 @@ public class LocalFileSystemStore implements IWebDAVStore {
 		_root = root;
 	}
 
+	@Override
 	public void destroy() {
 		LOG.debug("LocalFileSystemStore.destroy()");
 	}
 
+	@Override
 	public ITransaction begin(Principal principal) throws WebDAVException {
 		LOG.debug("LocalFileSystemStore.begin()");
 		if (!_root.exists()) {
@@ -71,21 +72,25 @@ public class LocalFileSystemStore implements IWebDAVStore {
 		return null;
 	}
 
+	@Override
 	public void checkAuthentication(ITransaction transaction) throws SecurityException {
 		LOG.debug("LocalFileSystemStore.checkAuthentication()");
 		// do nothing
 	}
 
+	@Override
 	public void commit(ITransaction transaction) throws WebDAVException {
 		// do nothing
 		LOG.debug("LocalFileSystemStore.commit()");
 	}
 
+	@Override
 	public void rollback(ITransaction transaction) throws WebDAVException {
 		// do nothing
 		LOG.debug("LocalFileSystemStore.rollback()");
 	}
 
+	@Override
 	public void createFolder(ITransaction transaction, String uri) throws WebDAVException {
 		LOG.debug("LocalFileSystemStore.createFolder(" + uri + ")");
 		File file = new File(_root, uri);
@@ -95,6 +100,7 @@ public class LocalFileSystemStore implements IWebDAVStore {
 		}
 	}
 
+	@Override
 	public void createResource(ITransaction transaction, String uri) throws WebDAVException {
 		LOG.debug("LocalFileSystemStore.createResource(" + uri + ")");
 		File file = new File(_root, uri);
@@ -108,6 +114,7 @@ public class LocalFileSystemStore implements IWebDAVStore {
 		}
 	}
 
+	@Override
 	public long setResourceContent(ITransaction transaction, String uri, InputStream is, String contentType,
 			String characterEncoding) throws WebDAVException {
 		LOG.debug("LocalFileSystemStore.setResourceContent(" + uri + ")");
@@ -135,6 +142,7 @@ public class LocalFileSystemStore implements IWebDAVStore {
 		return getResourceLength(file);
 	}
 
+	@Override
 	public String[] getChildrenNames(ITransaction transaction, String uri) throws WebDAVException {
 		LOG.debug("LocalFileSystemStore.getChildrenNames(" + uri + ")");
 		File file = new File(_root, uri);
@@ -142,10 +150,9 @@ public class LocalFileSystemStore implements IWebDAVStore {
 		if (file.isDirectory()) {
 			File[] children = file.listFiles();
 			if (children != null) {
-				List<String> childList = new ArrayList<String>();
-				String name = null;
+				List<String> childList = new ArrayList<>();
 				for (int i = 0; i < children.length; i++) {
-					name = children[i].getName();
+					String name = children[i].getName();
 					childList.add(name);
 					LOG.debug("\tChild " + i + ": " + name);
 				}
@@ -156,6 +163,7 @@ public class LocalFileSystemStore implements IWebDAVStore {
 		return childrenNames;
 	}
 
+	@Override
 	public void removeObject(ITransaction transaction, String uri) throws WebDAVException {
 		File file = new File(_root, uri);
 		boolean success = file.delete();
@@ -165,6 +173,7 @@ public class LocalFileSystemStore implements IWebDAVStore {
 		}
 	}
 
+	@Override
 	public InputStream getResourceContent(ITransaction transaction, String uri) throws WebDAVException {
 		LOG.debug("LocalFileSystemStore.getResourceContent(" + uri + ")");
 		File file = new File(_root, uri);
@@ -179,12 +188,14 @@ public class LocalFileSystemStore implements IWebDAVStore {
 		return in;
 	}
 
+	@Override
 	public long getResourceLength(ITransaction transaction, String uri) {
 		LOG.debug("LocalFileSystemStore.getResourceLength(" + uri + ")");
 		File file = new File(_root, uri);
 		return getResourceLength(file);
 	}
 
+	@Override
 	public StoredObject getStoredObject(ITransaction transaction, String uri) {
 		uri = URLUtil.getCleanPath(uri);
 		if(uri.contains("//")) {

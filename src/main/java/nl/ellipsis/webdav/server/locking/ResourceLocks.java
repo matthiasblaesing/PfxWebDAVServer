@@ -16,8 +16,9 @@
 
 package nl.ellipsis.webdav.server.locking;
 
-import java.util.Enumeration;
-import java.util.Hashtable;
+import java.util.ArrayList;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 import nl.ellipsis.webdav.server.ITransaction;
 import nl.ellipsis.webdav.server.exceptions.LockFailedException;
@@ -48,22 +49,22 @@ public class ResourceLocks implements IResourceLocks {
 	/**
 	 * keys: path value: LockedObject from that path
 	 */
-	protected Hashtable<String, LockedObject> _locks = new Hashtable<String, LockedObject>();
+	protected Map<String, LockedObject> _locks = new ConcurrentHashMap<>();
 
 	/**
 	 * keys: id value: LockedObject from that id
 	 */
-	protected Hashtable<String, LockedObject> _locksByID = new Hashtable<String, LockedObject>();
+	protected Map<String, LockedObject> _locksByID = new ConcurrentHashMap<>();
 
 	/**
 	 * keys: path value: Temporary LockedObject from that path
 	 */
-	protected Hashtable<String, LockedObject> _tempLocks = new Hashtable<String, LockedObject>();
+	protected Map<String, LockedObject> _tempLocks = new ConcurrentHashMap<>();
 
 	/**
 	 * keys: id value: Temporary LockedObject from that id
 	 */
-	protected Hashtable<String, LockedObject> _tempLocksByID = new Hashtable<String, LockedObject>();
+	protected Map<String, LockedObject> _tempLocksByID = new ConcurrentHashMap<>();
 
 	// REMEMBER TO REMOVE UNUSED LOCKS FROM THE HASHTABLE AS WELL
 
@@ -78,13 +79,14 @@ public class ResourceLocks implements IResourceLocks {
 		_tempRoot = new LockedObject(this, CharsetUtil.FORWARD_SLASH, false);
 	}
 
+	@Override
 	public synchronized boolean lock(ITransaction transaction, String path, String owner, boolean exclusive, int depth,
 			int timeout, boolean temporary) throws LockFailedException {
 
 		// Before we take any new locks we want any exipred ones to be removed
 		checkTimeouts(transaction, temporary);
 
-		LockedObject lo = null;
+		LockedObject lo;
 		
 		path = URLUtil.getCleanPath(path);
 
@@ -124,6 +126,7 @@ public class ResourceLocks implements IResourceLocks {
 		}
 	}
 
+	@Override
 	public synchronized boolean unlock(ITransaction transaction, String id, String owner) {
 
 		if (_locksByID.containsKey(id)) {
@@ -149,9 +152,10 @@ public class ResourceLocks implements IResourceLocks {
 		return true;
 	}
 
+	@Override
 	public synchronized void unlockTemporaryLockedObjects(ITransaction transaction, String path, String owner) {
 		path = URLUtil.getCleanPath(path);
-		
+
 		if (_tempLocks.containsKey(path)) {
 			LockedObject lo = _tempLocks.get(path);
 			lo.removeLockedObjectOwner(owner);
@@ -170,21 +174,16 @@ public class ResourceLocks implements IResourceLocks {
 		checkTimeouts(transaction, _temporary);
 	}
 
+	@Override
 	public void checkTimeouts(ITransaction transaction, boolean temporary) {
 		if (!temporary) {
-			Enumeration<LockedObject> lockedObjects = _locks.elements();
-			while (lockedObjects.hasMoreElements()) {
-				LockedObject currentLockedObject = lockedObjects.nextElement();
-
+			for(LockedObject currentLockedObject: new ArrayList<>(_locks.values())) {
 				if (currentLockedObject._expiresAt < System.currentTimeMillis()) {
 					currentLockedObject.removeLockedObject();
 				}
 			}
 		} else {
-			Enumeration<LockedObject> lockedObjects = _tempLocks.elements();
-			while (lockedObjects.hasMoreElements()) {
-				LockedObject currentLockedObject = lockedObjects.nextElement();
-
+			for(LockedObject currentLockedObject: new ArrayList<>(_tempLocks.values())) {
 				if (currentLockedObject._expiresAt < System.currentTimeMillis()) {
 					currentLockedObject.removeTempLockedObject();
 				}
@@ -192,16 +191,19 @@ public class ResourceLocks implements IResourceLocks {
 		}
 	}
 
+	@Override
 	public boolean exclusiveLock(ITransaction transaction, String path, String owner, int depth, int timeout)
 			throws LockFailedException {
 		return lock(transaction, path, owner, true, depth, timeout, false);
 	}
 
+	@Override
 	public boolean sharedLock(ITransaction transaction, String path, String owner, int depth, int timeout)
 			throws LockFailedException {
 		return lock(transaction, path, owner, false, depth, timeout, false);
 	}
 
+	@Override
 	public LockedObject getLockedObjectByID(ITransaction transaction, String id) {
 		if (_locksByID.containsKey(id)) {
 			return _locksByID.get(id);
@@ -210,6 +212,7 @@ public class ResourceLocks implements IResourceLocks {
 		}
 	}
 
+	@Override
 	public LockedObject getLockedObjectByPath(ITransaction transaction, String path) {
 		path = URLUtil.getCleanPath(path);
 		if (_locks.containsKey(path)) {
@@ -219,6 +222,7 @@ public class ResourceLocks implements IResourceLocks {
 		}
 	}
 
+	@Override
 	public LockedObject getTempLockedObjectByID(ITransaction transaction, String id) {
 		if (_tempLocksByID.containsKey(id)) {
 			return _tempLocksByID.get(id);
@@ -227,6 +231,7 @@ public class ResourceLocks implements IResourceLocks {
 		}
 	}
 
+	@Override
 	public LockedObject getTempLockedObjectByPath(ITransaction transaction, String path) {
 		path = URLUtil.getCleanPath(path);
 		if (_tempLocks.containsKey(path)) {

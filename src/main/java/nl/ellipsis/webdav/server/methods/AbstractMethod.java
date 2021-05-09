@@ -25,9 +25,9 @@ import java.nio.charset.StandardCharsets;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
-import java.util.Enumeration;
-import java.util.Hashtable;
 import java.util.Locale;
+import java.util.Map;
+import java.util.Map.Entry;
 import java.util.TimeZone;
 
 import javax.servlet.ServletException;
@@ -396,11 +396,11 @@ public abstract class AbstractMethod implements IMethodExecutor {
 	 * @param errorList
 	 *            List of error to be displayed
 	 */
-	protected static void sendReport(HttpServletRequest req, HttpServletResponse resp, Hashtable<String,Integer> errorList)
+	protected static void sendReport(HttpServletRequest req, HttpServletResponse resp, Map<String,Integer> errorList)
 			throws IOException {
 
 		if (errorList.size() == 1) {
-			int code = errorList.elements().nextElement();
+			int code = errorList.values().iterator().next();
 			HttpStatus s = HttpStatus.valueOf(code);
 			String status = s.getReasonPhrase();
 			if (status != null && !status.isEmpty()) {
@@ -419,11 +419,10 @@ public abstract class AbstractMethod implements IMethodExecutor {
 
 			generatedXML.writeElement(NS_DAV_PREFIX,NS_DAV_FULLNAME,WebDAVConstants.XMLTag.MULTISTATUS,XMLWriter.OPENING);
 
-			Enumeration<String> pathList = errorList.keys();
-			while (pathList.hasMoreElements()) {
+			for(Entry<String,Integer> error: errorList.entrySet()) {
 
-				String errorPath = (String) pathList.nextElement();
-				int errorCode = ((Integer) errorList.get(errorPath)).intValue();
+				String errorPath = error.getKey();
+				int errorCode = error.getValue();
 
 				generatedXML.writeElement(NS_DAV_PREFIX,WebDAVConstants.XMLTag.RESPONSE,XMLWriter.OPENING);
 

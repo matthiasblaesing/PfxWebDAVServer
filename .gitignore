@@ -7,3 +7,5 @@ build
 /logs/
 /.idea
 *.iml
+/nbactions.xml
+/nb-configuration.xml

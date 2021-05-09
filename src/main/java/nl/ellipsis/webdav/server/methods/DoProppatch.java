@@ -17,13 +17,16 @@
 package nl.ellipsis.webdav.server.methods;
 
 import java.io.IOException;
-import java.util.Hashtable;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Vector;
+import java.util.Map;
+import javax.servlet.ServletException;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.xml.parsers.ParserConfigurationException;
 
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -44,6 +47,7 @@ import nl.ellipsis.webdav.server.util.CharsetUtil;
 import nl.ellipsis.webdav.server.util.URLUtil;
 import nl.ellipsis.webdav.server.util.XMLHelper;
 import nl.ellipsis.webdav.server.util.XMLWriter;
+import org.xml.sax.SAXException;
 
 public class DoProppatch extends AbstractMethod {
 
@@ -59,6 +63,8 @@ public class DoProppatch extends AbstractMethod {
 		_resourceLocks = resLocks;
 	}
 
+	@Override
+	@SuppressWarnings("null")
 	public void execute(ITransaction transaction, HttpServletRequest req, HttpServletResponse resp)
 			throws IOException, LockFailedException {
 		String path = getRelativePath(req);
@@ -72,8 +78,6 @@ public class DoProppatch extends AbstractMethod {
 		}
 
 		String parentPath = URLUtil.getParentPath(path);
-
-		Hashtable<String, Integer> errorList = new Hashtable<String, Integer>();
 
 		if (!checkLocks(transaction, req, resp, _resourceLocks, parentPath)) {
 			resp.setStatus(HttpStatus.LOCKED.value());
@@ -92,11 +96,9 @@ public class DoProppatch extends AbstractMethod {
 		String tempLockOwner = "doProppatch" + System.currentTimeMillis() + req.toString();
 
 		if (_resourceLocks.lock(transaction, path, tempLockOwner, false, 0, AbstractMethod.getTempTimeout(), TEMPORARY)) {
-			StoredObject so = null;
-			LockedObject lo = null;
 			try {
-				so = _store.getStoredObject(transaction, path);
-				lo = _resourceLocks.getLockedObjectByPath(transaction, path);
+				StoredObject so = _store.getStoredObject(transaction, path);
+				LockedObject lo = _resourceLocks.getLockedObjectByPath(transaction, path);
 
 				if (so == null) {
 					resp.sendError(HttpServletResponse.SC_NOT_FOUND);
@@ -116,22 +118,20 @@ public class DoProppatch extends AbstractMethod {
 				boolean lockTokenMatchesIfHeader = (lockTokens != null && lockTokens[0].equals(lo.getID()));
 				if (lo != null && lo.isExclusive() && !lockTokenMatchesIfHeader) {
 					// Object on specified path is LOCKED
-					errorList = new Hashtable<String, Integer>();
-					errorList.put(path, new Integer(HttpStatus.LOCKED.value()));
+					Map<String, Integer> errorList = new HashMap<>();
+					errorList.put(path, HttpStatus.LOCKED.value());
 					sendReport(req, resp, errorList);
 					return;
 				}
 
-				List<String> toset = null;
-				List<String> toremove = null;
-				List<String> tochange = new Vector<String>();
+				List<String> tochange = new ArrayList<>();
 				// contains all properties from
 				// toset and toremove
 
 				path = getRelativePath(req);
 
-				Node tosetNode = null;
-				Node toremoveNode = null;
+				Node tosetNode;
+				Node toremoveNode;
 
 				if (req.getContentLength() != 0) {
 					try {
@@ -142,7 +142,7 @@ public class DoProppatch extends AbstractMethod {
 						tosetNode = XMLHelper.findSubElement(XMLHelper.findSubElement(rootElement, "set"), "prop");
 						toremoveNode = XMLHelper.findSubElement(XMLHelper.findSubElement(rootElement, "remove"),
 								"prop");
-					} catch (Exception e) {
+					} catch (IOException | ServletException | ParserConfigurationException | SAXException | RuntimeException e) {
 						LOG.error("Sending internal error!", e);
 						resp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
 						return;
@@ -155,12 +155,12 @@ public class DoProppatch extends AbstractMethod {
 				}
 
 				if (tosetNode != null) {
-					toset = XMLHelper.getPropertiesFromXML(tosetNode);
+					List<String> toset = XMLHelper.getPropertiesFromXML(tosetNode);
 					tochange.addAll(toset);
 				}
 
 				if (toremoveNode != null) {
-					toremove = XMLHelper.getPropertiesFromXML(toremoveNode);
+					List<String> toremove = XMLHelper.getPropertiesFromXML(toremoveNode);
 					tochange.addAll(toremove);
 				}
 
@@ -173,7 +173,7 @@ public class DoProppatch extends AbstractMethod {
 				generatedXML.writeElement(NS_DAV_PREFIX,NS_DAV_FULLNAME,WebDAVConstants.XMLTag.MULTISTATUS, XMLWriter.OPENING);
 
 				generatedXML.writeElement(NS_DAV_PREFIX,WebDAVConstants.XMLTag.RESPONSE, XMLWriter.OPENING);
-				String status = new String("HTTP/1.1 " + HttpServletResponse.SC_OK + " " + HttpStatus.OK.getReasonPhrase());
+				String status = "HTTP/1.1 " + HttpServletResponse.SC_OK + " " + HttpStatus.OK.getReasonPhrase();
 
 				// Generating href element
 				generatedXML.writeElement(NS_DAV_PREFIX,WebDAVConstants.XMLTag.HREF, XMLWriter.OPENING);

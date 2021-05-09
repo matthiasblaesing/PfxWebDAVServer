@@ -18,6 +18,7 @@ package nl.ellipsis.webdav.server.util;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
+import java.io.UnsupportedEncodingException;
 import java.util.BitSet;
 
 /**
@@ -32,7 +33,7 @@ import java.util.BitSet;
  * @author Craig R. McClanahan
  * @author Remy Maucherat
  */
-public class URLEncoder {
+public final class URLEncoder {
 	private static org.slf4j.Logger LOG = org.slf4j.LoggerFactory.getLogger(URLEncoder.class);
 
 	protected static final char[] HEXADECIMAL = { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D',
@@ -63,12 +64,12 @@ public class URLEncoder {
 	public String encode(String path) {
 		int maxBytesPerChar = 10;
 		// int caseDiff = ('a' - 'A');
-		StringBuffer rewrittenPath = new StringBuffer(path.length());
+		StringBuilder rewrittenPath = new StringBuilder(path.length());
 		ByteArrayOutputStream buf = new ByteArrayOutputStream(maxBytesPerChar);
-		OutputStreamWriter writer = null;
+		OutputStreamWriter writer;
 		try {
 			writer = new OutputStreamWriter(buf, "UTF8");
-		} catch (Exception e) {
+		} catch (UnsupportedEncodingException | RuntimeException e) {
 			LOG.error("Error in encode <" + path + ">", e);
 			writer = new OutputStreamWriter(buf);
 		}

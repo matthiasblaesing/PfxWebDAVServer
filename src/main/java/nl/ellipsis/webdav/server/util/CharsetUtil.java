@@ -31,7 +31,7 @@ public class CharsetUtil {
 	public static final char CHAR_SEMICOLON = ';';
 	public static final char CHAR_SPACE = ' ';
 	public static final char CHAR_UNDERSCORE = '_';
-		
+
 	public static final String BACKSLASH = "\\";
 	public static final String COLON = ":";
 	public static final String DOT = ".";

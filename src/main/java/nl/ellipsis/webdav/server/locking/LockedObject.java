@@ -79,6 +79,7 @@ public class LockedObject {
 	 * @param temporary
 	 *            indicates if the LockedObject should be temporary or not
 	 */
+	@SuppressWarnings("LeakingThisInConstructor")
 	public LockedObject(ResourceLocks resLocks, String path, boolean temporary) {
 		_path = URLUtil.getCleanPath(path);
 		_id = UUID.randomUUID().toString();
