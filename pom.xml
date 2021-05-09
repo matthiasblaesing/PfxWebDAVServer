@@ -65,11 +65,6 @@
 		</dependency>
 		<!-- https://mvnrepository.com/artifact/org.apache.velocity/velocity-engine-core -->
 		<dependency>
-		    <groupId>org.apache.velocity</groupId>
-		    <artifactId>velocity-engine-core</artifactId>
-		    <version>${apache-velocity.version}</version>
-		</dependency>
-		<dependency>
 			<groupId>junit</groupId>
 			<artifactId>junit</artifactId>
 			<version>${junit.version}</version>

@@ -22,21 +22,15 @@ import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Arrays;
 import java.util.Locale;
-import java.util.Vector;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import nl.ellipsis.webdav.HttpHeaders;
 
-import org.apache.velocity.Template;
-import org.apache.velocity.VelocityContext;
-import org.apache.velocity.app.Velocity;
-
 import nl.ellipsis.webdav.server.IMimeTyper;
 import nl.ellipsis.webdav.server.ITransaction;
 import nl.ellipsis.webdav.server.IWebDAVStore;
 import nl.ellipsis.webdav.server.StoredObject;
-import nl.ellipsis.webdav.server.WebDAVServlet;
 import nl.ellipsis.webdav.server.locking.ResourceLocks;
 import nl.ellipsis.webdav.server.util.CharsetUtil;
 import nl.ellipsis.webdav.server.util.URLUtil;
@@ -121,48 +115,32 @@ public class DoGet extends DoHead {
 				
 				String href = URLUtil.getCleanPath(req.getContextPath(),req.getServletPath());
 
-				if(WebDAVServlet.useVelocity) {
-					Template t = Velocity.getTemplate("webdav.vm");
-					VelocityContext context = new VelocityContext();
-					context.put("path", URLUtil.getCleanPath(href,path));
-					context.put("css", css);
-					Vector resources = new Vector();
-					boolean isEven = false;
-					for (String child : children) {
-						isEven = !isEven;
-						StoredObject obj = _store.getStoredObject(transaction, URLUtil.getCleanPath(path,child));
-						resources.add(obj);
-					}
-					context.put("resources", resources);
-					t.merge(context, resp.getWriter());				
-				} else  {
-					OutputStream out = resp.getOutputStream();
-					
-					StringBuilder sbFolderBody = new StringBuilder();
-					sbFolderBody.append("<html><head><title>Content of folder ");
-					sbFolderBody.append(URLUtil.getCleanPath(href,path));
-					sbFolderBody.append("</title><style type=\"text/css\">");
-					sbFolderBody.append(css);
-					sbFolderBody.append("</style></head>");
-					sbFolderBody.append("<body>");
-					sbFolderBody.append(getHeader(transaction, URLUtil.getCleanPath(href,path), resp, req));
-					sbFolderBody.append("<table>");
-					sbFolderBody.append("<tr><th>Name</th><th>Size</th><th>Created</th><th>Modified</th></tr>");
-					sbFolderBody.append("<tr>");
-					if(!path.equals(CharsetUtil.FORWARD_SLASH)) {
-						sbFolderBody.append("<td colspan=\"4\"><a href=\"../\">Parent</a></td></tr>");
-					}
-					boolean isEven = false;
-					for (String child : children) {
-						isEven = !isEven;
-						StoredObject obj = _store.getStoredObject(transaction, URLUtil.getCleanPath(path,child));
-						appendTableRow(transaction,sbFolderBody,URLUtil.getCleanPath(href,path),child,obj,isEven,shortDF);
-					}
-					sbFolderBody.append("</table>");
-					sbFolderBody.append(getFooter(transaction, path, resp, req));
-					sbFolderBody.append("</body></html>");
-					out.write(sbFolderBody.toString().getBytes("UTF-8"));
-				}
+                                OutputStream out = resp.getOutputStream();
+
+                                StringBuilder sbFolderBody = new StringBuilder();
+                                sbFolderBody.append("<html><head><title>Content of folder ");
+                                sbFolderBody.append(URLUtil.getCleanPath(href,path));
+                                sbFolderBody.append("</title><style type=\"text/css\">");
+                                sbFolderBody.append(css);
+                                sbFolderBody.append("</style></head>");
+                                sbFolderBody.append("<body>");
+                                sbFolderBody.append(getHeader(transaction, URLUtil.getCleanPath(href,path), resp, req));
+                                sbFolderBody.append("<table>");
+                                sbFolderBody.append("<tr><th>Name</th><th>Size</th><th>Created</th><th>Modified</th></tr>");
+                                sbFolderBody.append("<tr>");
+                                if(!path.equals(CharsetUtil.FORWARD_SLASH)) {
+                                        sbFolderBody.append("<td colspan=\"4\"><a href=\"../\">Parent</a></td></tr>");
+                                }
+                                boolean isEven = false;
+                                for (String child : children) {
+                                        isEven = !isEven;
+                                        StoredObject obj = _store.getStoredObject(transaction, URLUtil.getCleanPath(path,child));
+                                        appendTableRow(transaction,sbFolderBody,URLUtil.getCleanPath(href,path),child,obj,isEven,shortDF);
+                                }
+                                sbFolderBody.append("</table>");
+                                sbFolderBody.append(getFooter(transaction, path, resp, req));
+                                sbFolderBody.append("</body></html>");
+                                out.write(sbFolderBody.toString().getBytes("UTF-8"));
 			}
 		}
 	}

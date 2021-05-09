@@ -15,8 +15,6 @@
  */
 package nl.ellipsis.webdav.server.util;
 
-import org.apache.commons.lang3.StringUtils;
-
 /**
  * 
  * This utility class can be used for maintaining string-based relative url's

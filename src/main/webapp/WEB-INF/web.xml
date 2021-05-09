@@ -54,10 +54,10 @@
 	</servlet>
 
 	<!-- The mapping for the webdav servlet -->
-	<!-- Using /* as the mapping ensures that jasper, welcome files etc are 
-		over-ridden and all requests are processed by the webdav servlet. This also 
-		overcomes a number of issues with some webdav clients (including MS Webfolders) 
-		that do not respond correctly to the redirects (302) that result from using 
+	<!-- Using /* as the mapping ensures that jasper, welcome files etc are
+		over-ridden and all requests are processed by the webdav servlet. This also
+		overcomes a number of issues with some webdav clients (including MS Webfolders)
+		that do not respond correctly to the redirects (302) that result from using
 		a mapping of / -->
 	<servlet-mapping>
 		<servlet-name>webdav</servlet-name>
@@ -65,7 +65,7 @@
 	</servlet-mapping>
 
 	<!-- ================ Security Constraints for Testing =============== -->
-	<!-- 
+	<!--
 	<security-constraint>
 		<web-resource-collection>
 			<web-resource-name>The
@@ -83,7 +83,7 @@
 	<security-role>
 		<description> An example role defined in "conf/tomcat-users.xml" </description>
 		<role-name>webdav</role-name>
-	</security-role> 
+	</security-role>
 	 -->
 
 	<welcome-file-list>

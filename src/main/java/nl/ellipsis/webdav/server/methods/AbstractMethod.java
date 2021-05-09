@@ -36,7 +36,6 @@ import javax.servlet.http.HttpServletResponse;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.ParserConfigurationException;
 
-import org.apache.commons.lang3.StringUtils;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
 
@@ -50,6 +49,7 @@ import nl.ellipsis.webdav.server.exceptions.LockFailedException;
 import nl.ellipsis.webdav.server.locking.IResourceLocks;
 import nl.ellipsis.webdav.server.locking.LockedObject;
 import nl.ellipsis.webdav.server.util.CharsetUtil;
+import nl.ellipsis.webdav.server.util.StringUtils;
 import nl.ellipsis.webdav.server.util.URLEncoder;
 import nl.ellipsis.webdav.server.util.URLUtil;
 import nl.ellipsis.webdav.server.util.XMLHelper;
