@@ -202,13 +202,14 @@ public abstract class AbstractMethod implements IMethodExecutor {
 	}
 	
 	/**
-	 * Return W3C document 
-	 * @throws IOException 
-	 * @throws SAXException 
-	 * @throws ServletException 
-	 * @throws ParserConfigurationException 
+	 * Return W3C document
+	 * @param request
+	 * @return
+	 * @throws IOException
+	 * @throws SAXException
+	 * @throws ParserConfigurationException
 	 */
-	protected synchronized static Document getDocument(HttpServletRequest request) throws ServletException, SAXException, IOException, ParserConfigurationException {
+	protected synchronized static Document getDocument(HttpServletRequest request) throws SAXException, IOException, ParserConfigurationException {
 		DocumentBuilder documentBuilder = XMLHelper.getDocumentBuilder();
 
                 ByteArrayOutputStream baos = new ByteArrayOutputStream();
@@ -227,7 +228,7 @@ public abstract class AbstractMethod implements IMethodExecutor {
 		try {
 			return documentBuilder.parse(new ByteArrayInputStream(baos.toByteArray()));
 		} catch (SAXException e) {
-			LOG.error("Failed to parse XML in request - " + baos.toString(StandardCharsets.UTF_8), e);
+			LOG.debug("Failed to parse XML in request - " + baos.toString(StandardCharsets.UTF_8));
 			throw e;
 		}
 	}

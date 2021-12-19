@@ -28,7 +28,6 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import nl.ellipsis.webdav.server.exceptions.LockFailedException;
 
 import nl.ellipsis.webdav.server.exceptions.UnauthenticatedException;
 import nl.ellipsis.webdav.server.exceptions.WebDAVException;
@@ -189,7 +188,7 @@ public class WebDAVServletBean extends HttpServlet {
 			e.printStackTrace(pw);
 			LOG.error("WebDAVException: " + sw.toString());
 			throw new ServletException(e);
-		} catch (IOException | ServletException | RuntimeException e) {
+		} catch (IOException | RuntimeException e) {
 			java.io.StringWriter sw = new java.io.StringWriter();
 			java.io.PrintWriter pw = new java.io.PrintWriter(sw);
 			e.printStackTrace(pw);

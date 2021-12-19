@@ -142,7 +142,11 @@ public class DoProppatch extends AbstractMethod {
 						tosetNode = XMLHelper.findSubElement(XMLHelper.findSubElement(rootElement, "set"), "prop");
 						toremoveNode = XMLHelper.findSubElement(XMLHelper.findSubElement(rootElement, "remove"),
 								"prop");
-					} catch (IOException | ServletException | ParserConfigurationException | SAXException | RuntimeException e) {
+					} catch (SAXException e) {
+						LOG.error("Failed to parse request", e);
+						resp.sendError(HttpServletResponse.SC_BAD_REQUEST);
+						return;
+					} catch (IOException | ParserConfigurationException | RuntimeException e) {
 						LOG.error("Sending internal error!", e);
 						resp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
 						return;

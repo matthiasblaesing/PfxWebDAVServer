@@ -120,7 +120,11 @@ public class DoPropfind extends AbstractMethod {
 						} else if (XMLHelper.findSubElement(rootElement, "allprop") != null) {
 							propertyFindType = FIND_ALL_PROP;
 						}
-					} catch (IOException | ServletException | ParserConfigurationException | SAXException | RuntimeException e) {
+					} catch (SAXException e) {
+						LOG.error("Failed to parse request", e);
+						resp.sendError(HttpServletResponse.SC_BAD_REQUEST);
+						return;
+					} catch (IOException | ParserConfigurationException | RuntimeException e) {
 						LOG.error("Sending internal error!", e);
 						resp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
 						return;

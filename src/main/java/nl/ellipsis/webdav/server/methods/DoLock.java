@@ -19,7 +19,6 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
-import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.xml.parsers.ParserConfigurationException;
@@ -156,9 +155,6 @@ public class DoLock extends AbstractMethod {
 		try {
 			// Thats the locking itself
 			executeLock(transaction, req, resp);
-		} catch (ServletException e) {
-			LOG.error("Sending internal error!", e);
-			resp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
 		} catch (LockFailedException e) {
 			sendLockFailError(transaction, req, resp);
 		}
@@ -204,7 +200,7 @@ public class DoLock extends AbstractMethod {
 
 		} catch (LockFailedException e) {
 			sendLockFailError(transaction, req, resp);
-		} catch (WebDAVException | ServletException e) {
+		} catch (WebDAVException e) {
 			LOG.error("Sending internal error!", e);
 			resp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
 		}
@@ -243,7 +239,7 @@ public class DoLock extends AbstractMethod {
 	 * Executes the LOCK
 	 */
 	private void executeLock(ITransaction transaction, HttpServletRequest req, HttpServletResponse resp)
-			throws LockFailedException, IOException, ServletException {
+			throws LockFailedException, IOException {
 
 		// Mac OS lock request workaround
 		if (_macLockRequest) {
@@ -289,7 +285,7 @@ public class DoLock extends AbstractMethod {
 	 * Tries to get the LockInformation from LOCK request
 	 */
 	private boolean getLockInformation(ITransaction transaction, HttpServletRequest req, HttpServletResponse resp)
-			throws ServletException, IOException {
+			throws IOException {
 
 		try {
 			Document document = getDocument(req);
@@ -387,11 +383,11 @@ public class DoLock extends AbstractMethod {
 				return false;
 			}
 
-		} catch (DOMException e) {
-			resp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-			LOG.error("DOM exception", e);
+		} catch (DOMException | SAXException e) {
+			resp.sendError(HttpServletResponse.SC_BAD_REQUEST);
+			LOG.error("Failed to parse request", e);
 			return false;
-		} catch (SAXException | ParserConfigurationException e) {
+		} catch (ParserConfigurationException e) {
 			resp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
 			LOG.error("SAX exception", e);
 			return false;
