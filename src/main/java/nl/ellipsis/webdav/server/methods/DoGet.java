@@ -101,7 +101,7 @@ public class DoGet extends DoHead {
 				// TODO some folder response (for browsers, DAV tools
 				// use propfind) in html?
 				// Locale locale = req.getLocale();
-				
+
 				DateFormat shortDF = getDateTimeFormat(req.getLocale());
 				resp.setContentType("text/html");
 				resp.setCharacterEncoding("UTF8");
@@ -110,9 +110,9 @@ public class DoGet extends DoHead {
 				children = (children == null ? new String[] {} : children);
 				// Sort by name
 				Arrays.sort(children);
-				
+
 				String css = getCSS();
-				
+
 				String href = URLUtil.getCleanPath(req.getContextPath(),req.getServletPath());
 
                                 OutputStream out = resp.getOutputStream();
@@ -206,27 +206,21 @@ public class DoGet extends DoHead {
 	 */
 	private String getCSS() {
 		// The default styles to use
-		String retVal = "body {\n" + "	font-family: Arial, Helvetica, sans-serif;\n" + "}\n" + "h1 {\n"
-				+ "	font-size: 1.5em;\n" + "}\n" + "th {\n" + "	background-color: #9DACBF;\n" + "}\n" + "table {\n"
-				+ "	border-top-style: solid;\n" + "	border-right-style: solid;\n" + "	border-bottom-style: solid;\n"
-				+ "	border-left-style: solid;\n" + "}\n" + "td {\n" + "	margin: 0px;\n" + "	padding-top: 2px;\n"
-				+ "	padding-right: 5px;\n" + "	padding-bottom: 2px;\n" + "	padding-left: 5px;\n" + "}\n"
-				+ "tr.even {\n" + "	background-color: #CCCCCC;\n" + "}\n" + "tr.odd {\n"
-				+ "	background-color: #FFFFFF;\n" + "}\n" + "";
+		String retVal = "";
 		try {
 			// Try loading one via class loader and use that one instead
 			ClassLoader cl = getClass().getClassLoader();
 			InputStream iStream = cl.getResourceAsStream("webdav.css");
 			if (iStream != null) {
 				// Found css via class loader, use that one
-				StringBuffer out = new StringBuffer();
+				StringBuilder out = new StringBuilder();
 				byte[] b = new byte[4096];
 				for (int n; (n = iStream.read(b)) != -1;) {
 					out.append(new String(b, 0, n));
 				}
 				retVal = out.toString();
 			}
-		} catch (Exception ex) {
+		} catch (IOException | RuntimeException ex) {
 			LOG.error("Error in reading webdav.css", ex);
 		}
 
