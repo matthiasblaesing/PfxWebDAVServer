@@ -123,13 +123,9 @@ public class DoHead extends AbstractMethod {
 
 							if (_contentLength == 1) {
 								if (resourceLength > 0) {
-									if (resourceLength <= Integer.MAX_VALUE) {
-										resp.setContentLength((int) resourceLength);
-									} else {
-										resp.setHeader(HttpHeaders.CONTENT_LENGTH, Long.toString(resourceLength));
-										// is "content-length" the right header?
-										// is long a valid format?
-									}
+									resp.setHeader(HttpHeaders.CONTENT_LENGTH, Long.toString(resourceLength));
+									// is "content-length" the right header?
+									// is long a valid format?
 								}
 							}
 
@@ -143,7 +139,7 @@ public class DoHead extends AbstractMethod {
 									resp.setContentType("text/html");
 								}
 							}
-							doBody(transaction, resp, path);
+							doBody(transaction, req, resp, path);
 						}
 					} else {
 						folderBody(transaction, path, resp, req);
@@ -176,7 +172,7 @@ public class DoHead extends AbstractMethod {
 		// no body for HEAD
 	}
 
-	protected void doBody(ITransaction transaction, HttpServletResponse resp, String path) throws IOException {
+	protected void doBody(ITransaction transaction, HttpServletRequest req, HttpServletResponse resp, String path) throws IOException {
 		// no body for HEAD
 	}
 }

@@ -93,6 +93,9 @@ public class DoGetTest extends MockTest {
 				oneOf(mockReq).getHeader(HttpHeaders.IF_NONE_MATCH);
 				will(returnValue(null));
 
+				oneOf(mockReq).getHeader(HttpHeaders.RANGE);
+				will(returnValue(null));
+
 				oneOf(mockRes).setDateHeader("last-modified", indexSo.getLastModified().getTime());
 
 				oneOf(mockRes).addHeader(with(any(String.class)), with(any(String.class)));
@@ -239,6 +242,9 @@ public class DoGetTest extends MockTest {
 				will(returnValue(alternativeSo));
 
 				oneOf(mockReq).getHeader(HttpHeaders.IF_NONE_MATCH);
+				will(returnValue(null));
+
+				oneOf(mockReq).getHeader(HttpHeaders.RANGE);
 				will(returnValue(null));
 
 				oneOf(mockRes).setDateHeader("last-modified", alternativeSo.getLastModified().getTime());

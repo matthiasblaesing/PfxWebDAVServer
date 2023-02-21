@@ -22,6 +22,8 @@ import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Arrays;
 import java.util.Locale;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -38,14 +40,41 @@ import nl.ellipsis.webdav.server.util.URLUtil;
 public class DoGet extends DoHead {
 
 	private static org.slf4j.Logger LOG = org.slf4j.LoggerFactory.getLogger(DoGet.class);
+	private static Pattern RANGE_PATTERN = Pattern.compile("\\s*bytes\\s*=\\s*(\\d*)\\s*-\\s*(\\d*)\\s*");
 
 	public DoGet(IWebDAVStore store, String dftIndexFile, String insteadOf404, ResourceLocks resourceLocks,
 			IMimeTyper mimeTyper, int contentLengthHeader) {
 		super(store, dftIndexFile, insteadOf404, resourceLocks, mimeTyper, contentLengthHeader);
 	}
 
-	protected void doBody(ITransaction transaction, HttpServletResponse resp, String path) {
+	@Override
+	protected void doBody(ITransaction transaction, HttpServletRequest req, HttpServletResponse resp, String path) {
 		try {
+			Long start = null;
+			Long end = null;
+
+			String rangeHeader = req.getHeader(HttpHeaders.RANGE);
+			if(rangeHeader != null) {
+				Matcher rangeMatcher = RANGE_PATTERN.matcher(rangeHeader);
+				if(! rangeMatcher.matches()) {
+					resp.sendError(HttpServletResponse.SC_BAD_REQUEST, "Invalid range");
+					return;
+				}
+				String startString = rangeMatcher.group(1).trim();
+				String endString = rangeMatcher.group(2).trim();
+				if(! startString.isEmpty()) {
+					start = Long.valueOf(startString);
+				}
+				if(! endString.isEmpty()) {
+					end = Long.valueOf(endString);
+				}
+			}
+
+			if(start != null && end != null && start > end) {
+				resp.sendError(HttpServletResponse.SC_REQUESTED_RANGE_NOT_SATISFIABLE, "Invalid range");
+				return;
+			}
+
 			StoredObject so = _store.getStoredObject(transaction, path);
 			if (so.isNullResource()) {
 				String methodsAllowed = DeterminableMethod.determineMethodsAllowed(so);
@@ -53,35 +82,51 @@ public class DoGet extends DoHead {
 				resp.sendError(HttpServletResponse.SC_METHOD_NOT_ALLOWED);
 				return;
 			}
-			OutputStream out = resp.getOutputStream();
-			InputStream in = _store.getResourceContent(transaction, path);
-			try {
+
+			if(start != null && (start < 0 || start > so.getResourceLength())) {
+				resp.sendError(HttpServletResponse.SC_REQUESTED_RANGE_NOT_SATISFIABLE);
+				return;
+			}
+
+			if(start != null || end != null) {
+				resp.setStatus(HttpServletResponse.SC_PARTIAL_CONTENT);
+				long startEv = start != null ? start : 0;
+				long maxEv = so.getResourceLength();
+				long endEv = end != null ? Math.min(maxEv, end) : maxEv;
+				resp.setHeader(HttpHeaders.CONTENT_LENGTH, Long.toString(endEv - startEv));
+				resp.addHeader(HttpHeaders.CONTENT_RANGE, String.format("bytes %d-%d/%d",
+					startEv,
+					endEv,
+					so.getResourceLength()));
+			}
+
+			try (OutputStream out = resp.getOutputStream(); InputStream in = _store.getResourceContent(transaction, path);) {
+				if(start != null) {
+					in.skip(start);
+				}
+
 				int read = -1;
 				byte[] copyBuffer = new byte[BUF_SIZE];
 
+				long pos = start != null ? start : 0;
 				while ((read = in.read(copyBuffer, 0, copyBuffer.length)) != -1) {
-					out.write(copyBuffer, 0, read);
-				}
-			} finally {
-				// flushing causes a IOE if a file is opened on the webserver
-				// client disconnected before server finished sending response
-				try {
-					in.close();
-				} catch (Exception e) {
-					LOG.warn("Closing InputStream causes Exception!\n" + e.toString());
-				}
-				try {
-					out.flush();
-					out.close();
-				} catch (Exception e) {
-					LOG.warn("Flushing OutputStream causes Exception!\n" + e.toString());
+					int toWrite = read;
+					if(end != null && (pos + read) > end) {
+						toWrite = (int) (end - pos);
+					}
+					pos += toWrite;
+					if(toWrite == 0) {
+						break;
+					}
+					out.write(copyBuffer, 0, toWrite);
 				}
 			}
 		} catch (Exception e) {
-			LOG.error(e.toString());
+			LOG.error(e.toString(), e);
 		}
 	}
 
+	@Override
 	protected void folderBody(ITransaction transaction, String path, HttpServletResponse resp, HttpServletRequest req)
 			throws IOException {
 
