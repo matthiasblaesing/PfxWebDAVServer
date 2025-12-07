@@ -18,8 +18,8 @@ package nl.ellipsis.webdav.server.methods;
 
 import java.io.IOException;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 
 import nl.ellipsis.webdav.HttpStatus;
 import nl.ellipsis.webdav.server.ITransaction;

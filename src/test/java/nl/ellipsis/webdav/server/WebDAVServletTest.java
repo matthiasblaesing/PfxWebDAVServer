@@ -1,7 +1,7 @@
 package nl.ellipsis.webdav.server;
 
-import javax.servlet.ServletConfig;
-import javax.servlet.ServletContext;
+import jakarta.servlet.ServletConfig;
+import jakarta.servlet.ServletContext;
 
 import nl.ellipsis.webdav.server.ITransaction;
 import nl.ellipsis.webdav.server.IWebDAVStore;
@@ -106,6 +106,9 @@ public class WebDAVServletTest extends MockTest {
 
                 oneOf(servletConfig).getInitParameter("no-content-length-headers");
                 will(returnValue("0"));
+
+                oneOf(servletConfig).getInitParameter("jakarta.servlet.http.legacyDoHead");
+                will(returnValue("FALSE"));
             }
         });
 
@@ -130,7 +133,7 @@ public class WebDAVServletTest extends MockTest {
         // StringTokenizer headers = new StringTokenizer(
         // "Host Depth Content-Type Content-Length");
         mockReq.setMethod("PUT");
-        mockReq.setAttribute("javax.servlet.include.request_uri", null);
+        mockReq.setAttribute("jakarta.servlet.include.request_uri", null);
         mockReq.setPathInfo("/aPath/toAFile");
         mockReq.setRequestURI("/aPath/toAFile");
         mockReq.addHeader("Host", "www.foo.bar");

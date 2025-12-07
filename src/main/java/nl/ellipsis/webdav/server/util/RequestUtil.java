@@ -19,7 +19,7 @@ package nl.ellipsis.webdav.server.util;
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.Map;
-import javax.servlet.http.Cookie;
+import jakarta.servlet.http.Cookie;
 import nl.ellipsis.webdav.server.LocalFileSystemStore;
 
 /**

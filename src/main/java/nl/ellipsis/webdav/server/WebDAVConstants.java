@@ -8,10 +8,10 @@ public interface WebDAVConstants {
 	// public static final String RESOURCES_ATTR = "nl.ellipsis.webdav.naming.resources";
 
 	public interface HttpRequestParam {
-	    public static final String INCLUDE_CONTEXT_PATH 		= "javax.servlet.include.context_path";
-	    public static final String INCLUDE_PATH_INFO 			= "javax.servlet.include.path_info";
-	    public static final String INCLUDE_REQUEST_URI 			= "javax.servlet.include.request_uri";
-	    public static final String INCLUDE_SERVLET_PATH 		= "javax.servlet.include.servlet_path";
+	    public static final String INCLUDE_CONTEXT_PATH 		= "jakarta.servlet.include.context_path";
+	    public static final String INCLUDE_PATH_INFO 			= "jakarta.servlet.include.path_info";
+	    public static final String INCLUDE_REQUEST_URI 			= "jakarta.servlet.include.request_uri";
+	    public static final String INCLUDE_SERVLET_PATH 		= "jakarta.servlet.include.servlet_path";
 	}
 	
 	public interface Permission {

@@ -18,7 +18,7 @@ package nl.ellipsis.webdav.server;
 
 import java.io.File;
 import java.lang.reflect.Constructor;
-import javax.servlet.ServletException;
+import jakarta.servlet.ServletException;
 
 import nl.ellipsis.webdav.server.exceptions.WebDAVException;
 import nl.ellipsis.webdav.server.util.CharsetUtil;

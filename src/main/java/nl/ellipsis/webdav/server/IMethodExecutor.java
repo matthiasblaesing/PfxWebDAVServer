@@ -17,8 +17,8 @@ package nl.ellipsis.webdav.server;
 
 import java.io.IOException;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 
 import nl.ellipsis.webdav.server.exceptions.LockFailedException;
 
